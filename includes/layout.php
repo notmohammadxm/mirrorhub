@@ -42,6 +42,9 @@ function renderHeader($title = '', $isAdmin = false) {
                     <a href="<?= SITE_URL ?>/admin/requests.php" class="<?= $currentPage === 'requests.php' ? 'active' : '' ?>">
                         <?= icon('inbox', 15) ?><span>درخواست‌ها</span>
                     </a>
+                    <a href="<?= SITE_URL ?>/admin/backup.php" class="<?= $currentPage === 'backup.php' ? 'active' : '' ?>">
+                        <?= icon('database', 15) ?><span>پشتیبان</span>
+                    </a>
                     <a href="<?= SITE_URL ?>/admin/users.php" class="<?= $currentPage === 'users.php' ? 'active' : '' ?>">
                         <?= icon('users', 15) ?><span>کاربران</span>
                     </a>
