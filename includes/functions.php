@@ -187,6 +187,27 @@ function setRequestProtocols($pdo, $requestId, array $protocols) {
     return true;
 }
 
+function getRequestLinks($pdo, $requestId) {
+    if (!hasTable($pdo, 'request_links')) return [];
+    try {
+        $stmt = $pdo->prepare("SELECT url FROM request_links WHERE request_id = ? ORDER BY sort_order ASC, id ASC");
+        $stmt->execute([(int)$requestId]);
+        return $stmt->fetchAll();
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+function setRequestLinks($pdo, $requestId, array $links) {
+    if (!hasTable($pdo, 'request_links')) return false;
+    $pdo->prepare("DELETE FROM request_links WHERE request_id = ?")->execute([(int)$requestId]);
+    $stmt = $pdo->prepare("INSERT INTO request_links (request_id, url, sort_order) VALUES (?, ?, ?)");
+    foreach (array_values($links) as $i => $url) {
+        $stmt->execute([(int)$requestId, (string)$url, $i]);
+    }
+    return true;
+}
+
 function protocolBadges(array $protocols) {
     $html = '';
     foreach ($protocols as $item) {
