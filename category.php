@@ -16,7 +16,8 @@ $path = getCategoryPath($pdo, $category['id']);
 $subCategories = getCategories($pdo, $category['id']);
 $mirrors = getMirrorsByCategory($pdo, $category['id']);
 foreach ($mirrors as &$m) {
-    $m['categories'] = getMirrorCategories($pdo, $m['id']);
+    $m['categories'] = getMirrorCategoryTags($pdo, $m['id']);
+        $m['protocols'] = getMirrorProtocols($pdo, $m['id']);
 }
 unset($m);
 
@@ -83,7 +84,7 @@ renderHeader($category['name']);
                         <p class="mirror-desc"><?= htmlspecialchars($mirror['description']) ?></p>
                     <?php endif; ?>
                     <div class="mirror-meta">
-                        <span class="badge <?= getProtocolBadgeClass($mirror['protocol'] ?? 'https') ?> protocol-badge"><?= htmlspecialchars(strtoupper(getProtocolLabel($mirror['protocol'] ?? 'https'))) ?></span>
+                        <?= protocolBadges($mirror['protocols'] ?? getMirrorProtocols($pdo, $mirror['id'])) ?>
                         <?php foreach ($mirror['categories'] as $c): ?>
                             <?php if ($c['id'] != $category['id']): ?>
                                 <a href="<?= SITE_URL ?>/category.php?slug=<?= htmlspecialchars($c['slug']) ?>" class="badge"><?= htmlspecialchars($c['name']) ?></a>
