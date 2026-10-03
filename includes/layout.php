@@ -28,7 +28,14 @@ function renderHeader($title = '', $isAdmin = false) {
     <header class="main-header">
         <div class="container">
             <a href="<?= SITE_URL ?>/<?= $isAdmin ? 'admin/dashboard.php' : 'index.php' ?>" class="logo"><?= htmlspecialchars($siteName) ?></a>
-            <nav class="main-nav">
+            <button type="button"
+                    class="nav-toggle"
+                    aria-label="باز کردن منو"
+                    aria-expanded="false"
+                    aria-controls="main-navigation">
+                <span></span><span></span><span></span>
+            </button>
+            <nav id="main-navigation" class="main-nav">
                 <?php if ($isAdmin): ?>
                     <a href="<?= SITE_URL ?>/admin/dashboard.php" class="<?= $currentPage === 'dashboard.php' ? 'active' : '' ?>">
                         <?= icon('dashboard', 15) ?><span>داشبورد</span>
