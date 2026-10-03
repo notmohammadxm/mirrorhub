@@ -49,8 +49,10 @@ $stmt->execute($params);
 $requests = $stmt->fetchAll();
 foreach ($requests as &$req) {
     $req['protocols'] = getRequestProtocols($pdo, $req['id']);
-    $req['parent_category'] = $req['parent_category_id'] ? getCategoryById($pdo, $req['parent_category_id']) : null;
-    $req['child_category'] = $req['category_id'] ? getCategoryById($pdo, $req['category_id']) : null;
+    $req['links'] = getRequestLinks($pdo, $req['id']);
+    if (empty($req['links']) && !empty($req['url'])) {
+        $req['links'] = [['url' => $req['url']]];
+    }
 }
 unset($req);
 
@@ -80,8 +82,9 @@ renderHeader('مدیریت درخواست‌ها', true);
             <thead>
                 <tr>
                     <th>نام میرور</th>
-                    <th>آدرس</th>
-                    <th>دسته‌بندی</th>
+                    <th>لینک‌ها</th>
+                    <th>تماس</th>
+                    <th>پروتکل</th>
                     <th>وضعیت</th>
                     <th>تاریخ</th>
                     <th>عملیات</th>
@@ -89,7 +92,7 @@ renderHeader('مدیریت درخواست‌ها', true);
             </thead>
             <tbody>
                 <?php if (empty($requests)): ?>
-                    <tr><td colspan="6" class="empty-state">درخواستی یافت نشد.</td></tr>
+                    <tr><td colspan="7" class="empty-state">درخواستی یافت نشد.</td></tr>
                 <?php else: ?>
                     <?php foreach ($requests as $req): ?>
                         <tr>
@@ -99,14 +102,26 @@ renderHeader('مدیریت درخواست‌ها', true);
                                     <span class="req-name-en"><?= htmlspecialchars($req['name_en']) ?></span>
                                 <?php endif; ?>
                             </td>
-                            <td data-label="آدرس" class="ltr-text">
-                                <a href="<?= htmlspecialchars($req['url']) ?>" target="_blank" rel="noopener noreferrer">
-                                    <?= htmlspecialchars(excerpt($req['url'], 30)) ?>
-                                </a>
+                            <td data-label="لینک‌ها" class="ltr-text">
+                                <div class="request-links-summary">
+                                    <?php foreach (array_slice($req['links'], 0, 2) as $link): ?>
+                                        <a href="<?= htmlspecialchars($link['url']) ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars(excerpt($link['url'], 34)) ?></a>
+                                    <?php endforeach; ?>
+                                    <?php if (count($req['links']) > 2): ?>
+                                        <span class="badge badge-default">+<?= count($req['links']) - 2 ?> لینک دیگر</span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
-                            <td data-label="دسته‌بندی">
-                                <?php if ($req['parent_category']): ?><span class="badge badge-default"><?= htmlspecialchars($req['parent_category']['name']) ?></span><?php endif; ?>
-                                <?php if ($req['child_category']): ?><span class="badge badge-primary"><?= htmlspecialchars($req['child_category']['name']) ?></span><?php endif; ?>
+                            <td data-label="تماس">
+                                <div class="request-contact-summary">
+                                    <a href="tel:<?= htmlspecialchars($req['phone'] ?? '') ?>" dir="ltr"><?= htmlspecialchars($req['phone'] ?? '-') ?></a>
+                                    <?php if (!empty($req['email'])): ?>
+                                        <a href="mailto:<?= htmlspecialchars($req['email']) ?>" dir="ltr"><?= htmlspecialchars($req['email']) ?></a>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td data-label="پروتکل">
+                                <?= protocolBadges($req['protocols']) ?>
                             </td>
                             <td data-label="وضعیت">
                                 <span class="badge badge-<?= $req['status'] === 'reviewed' ? 'success' : 'warning' ?>">
@@ -122,8 +137,10 @@ renderHeader('مدیریت درخواست‌ها', true);
                                     data-name-fa="<?= htmlspecialchars($req['name_fa']) ?>"
                                     data-name-en="<?= htmlspecialchars($req['name_en'] ?? '') ?>"
                                     data-url="<?= htmlspecialchars($req['url']) ?>"
+                                    data-links="<?= htmlspecialchars(json_encode($req['links'], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>"
                                     data-protocols="<?= htmlspecialchars(json_encode($req['protocols'], JSON_UNESCAPED_UNICODE)) ?>"
-                                    data-category="<?= htmlspecialchars($req['category_name']) ?>"
+                                    data-phone="<?= htmlspecialchars($req['phone'] ?? '') ?>"
+                                    data-email="<?= htmlspecialchars($req['email'] ?? '') ?>"
                                     data-description="<?= htmlspecialchars($req['description'] ?? '') ?>"
                                     data-status="<?= htmlspecialchars($req['status']) ?>"
                                     data-note="<?= htmlspecialchars($req['admin_note'] ?? '') ?>"
