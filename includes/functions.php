@@ -94,17 +94,27 @@ function getProtocolBadgeClass($protocol) {
 
 function normalizeProtocols($protocols, $customProtocols = []) {
     $protocols = is_array($protocols) ? $protocols : [$protocols];
-    $customProtocols = is_array($customProtocols) ? $customProtocols : [$customProtocols];
+    if (is_array($customProtocols)) {
+        $customList = $customProtocols;
+    } else {
+        $customList = [(string)$customProtocols];
+    }
+    $customValue = '';
+    foreach ($customList as $value) {
+        if (trim((string)$value) !== '') {
+            $customValue = trim((string)$value);
+            break;
+        }
+    }
     $allowed = array_keys(getProtocolOptions());
     $result = [];
-    foreach ($protocols as $index => $protocol) {
+    foreach ($protocols as $protocol) {
         $protocol = trim((string)$protocol);
         if (!in_array($protocol, $allowed, true)) continue;
         $custom = null;
         if ($protocol === 'custom') {
-            $custom = trim((string)($customProtocols[$index] ?? ''));
+            $custom = mb_substr($customValue, 0, 100);
             if ($custom === '') continue;
-            $custom = mb_substr($custom, 0, 100);
         }
         $key = $protocol . '|' . ($custom ?? '');
         if (isset($result[$key])) continue;
