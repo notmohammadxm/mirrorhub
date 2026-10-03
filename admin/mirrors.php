@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name_en = sanitize($_POST['name_en'] ?? '');
     $slug = sanitize($_POST['slug'] ?? '');
     $url = filter_var(trim($_POST['url'] ?? ''), FILTER_SANITIZE_URL);
-    $protocols = normalizeProtocols($_POST['protocols'] ?? [], $_POST['custom_protocols'] ?? []);
+    $customProtocolInput = $_POST['custom_protocols'] ?? ($_POST['custom_protocol'] ?? []);
+    $protocols = normalizeProtocols($_POST['protocols'] ?? [], $customProtocolInput);
     $protocol = $protocols[0]['protocol'] ?? 'https';
     $description = sanitize($_POST['description'] ?? '');
     $status = in_array($_POST['status'] ?? '', ['active', 'inactive']) ? $_POST['status'] : 'active';
@@ -113,22 +114,16 @@ if ($action === 'add' && $fromRequest > 0) {
 
 $protocolOptions = getProtocolOptions();
 $currentProtocols = $currentProtocols ?? [];
+$selectedProtocols = $currentProtocols;
+if (empty($selectedProtocols) && !empty($prefill['protocol'])) {
+    $selectedProtocols = normalizeProtocols([$prefill['protocol']]);
+}
 
 renderHeader('مدیریت میرورها', true);
 ?>
 
 <section class="section">
-    <div class="section-header">
-        <h1 class="section-title">مدیریت میرورها</h1>
-        <?php if ($action === 'add' || $action === 'edit'): ?>
-        <?php
-            $categoryGroups = [];
-            foreach ($categories as $cat) {
-                $parentId = (int)($cat['parent_id'] ?? 0);
-                $categoryGroups[$parentId][] = $cat;
-            }
-        ?>
-
+    <?php if ($action === 'add' || $action === 'edit'): ?>
         <div class="mirror-form-page">
             <div class="mirror-form-header">
                 <div class="mirror-form-title-wrap">
@@ -283,209 +278,12 @@ renderHeader('مدیریت میرورها', true);
                                                     </label>
                                                 <?php endforeach; ?>
                                             </div>
-                                        <?php else: ?>
-                                            <label class="mirror-category-item standalone">
-                                                <input type="checkbox" name="category_ids[]" value="<?= (int)$root['id'] ?>" <?= in_array((int)$root['id'], $currentCatIds, true) ? 'checked' : '' ?>>
-                                                <span class="mirror-category-item-check"><?= icon('check', 13) ?></span>
-                                                <span>استفاده از «<?= htmlspecialchars($root['name']) ?>»</span>
-                                            </label>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
-
-                                <?php if (empty($categories)): ?>
-                                    <div class="mirror-empty-inline">
-                                        <?= icon('folder', 18) ?>
-                                        <span>هنوز دسته‌بندی‌ای ایجاد نشده است.</span>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </section>
-
-                        <section class="mirror-form-card">
-                            <div class="mirror-form-card-head">
-                                <div>
-                                    <span class="mirror-step">۴</span>
-                                    <div class="mirror-step-copy">
-                                        <h3>توضیحات</h3>
-                                        <p>اطلاعات تکمیلی برای نمایش به کاربران.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group mirror-description-group">
-                                <textarea id="description" name="description" rows="7" maxlength="1000" placeholder="مثلاً این میرور بسته‌های Ubuntu، Debian و... را با سرعت بالا ارائه می‌کند."><?= htmlspecialchars($currentMirror['description'] ?? $prefill['description'] ?? '') ?></textarea>
-                                <div class="mirror-description-footer">
-                                    <span>می‌توانید درباره محتوا، سرعت یا محدوده سرویس توضیح دهید.</span>
-                                    <strong><span id="description-count">۰</span> / ۱۰۰۰</strong>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <aside class="mirror-form-side">
-                        <div class="mirror-side-card mirror-live-card">
-                            <div class="mirror-side-head">
-                                <div><span>پیش‌نمایش</span><strong>نمایش کارت</strong></div>
-                                <span class="mirror-live-dot"><i></i> زنده</span>
-                            </div>
-
-                            <div class="mirror-preview">
-                                <div class="mirror-preview-top">
-                                    <span class="mirror-preview-icon"><?= icon('server', 17) ?></span>
-                                    <span class="badge badge-success" id="preview-status">فعال</span>
-                                </div>
-                                <strong id="preview-name">نام میرور</strong>
-                                <small id="preview-name-en">Mirror Name</small>
-                                <p id="preview-description">توضیحات میرور در اینجا نمایش داده می‌شود.</p>
-                                <div class="mirror-preview-tags" id="preview-protocols"><span class="badge badge-primary">HTTPS</span></div>
-                            </div>
-
-                            <div class="mirror-preview-url" id="preview-url">https://example.com/mirror</div>
-                        </div>
-
-                        <div class="mirror-side-card">
-                            <div class="mirror-side-head"><div><span>وضعیت فرم</span><strong>آمادگی ذخیره</strong></div></div>
-                            <div class="mirror-form-checklist">
-                                <div id="check-name"><span></span><p>نام میرور</p></div>
-                                <div id="check-url"><span></span><p>آدرس معتبر</p></div>
-                                <div id="check-protocol"><span></span><p>حداقل یک پروتکل</p></div>
-                                <div id="check-category"><span></span><p>حداقل یک دسته</p></div>
-                            </div>
-                        </div>
-
-                        <div class="mirror-side-tip">
-                            <span><?= icon('info', 16) ?></span>
-                            <p>پروتکل‌ها و دسته‌بندی‌ها می‌توانند چندتایی باشند؛ انتخاب‌ها در کارت میرور به‌صورت tag نمایش داده می‌شوند.</p>
-                        </div>
-                    </aside>
-                </div>
-
-                <div class="mirror-savebar">
-                    <div class="mirror-savebar-copy">
-                        <span class="status-dot"></span>
-                        <div><strong><?= $action === 'edit' ? 'آماده ذخیره تغییرات' : 'آماده ثبت میرور جدید' ?></strong><small>اطلاعات را بررسی کنید و سپس ذخیره کنید.</small></div>
-                    </div>
-                    <div class="mirror-savebar-actions">
-                        <a href="<?= SITE_URL ?>/admin/mirrors.php" class="btn btn-outline">انصراف</a>
-                        <button type="submit" class="btn btn-primary btn-lg"><?= $action === 'edit' ? 'ذخیره تغییرات' : 'افزودن میرور' ?></button>
-                    </div>
-                </div>
-            </form>
-        </div>
+                                    
     <?php else: ?>
+        <div class="section-header">
+            <h1 class="section-title">مدیریت میرورها</h1>
             <a href="<?= SITE_URL ?>/admin/mirrors.php?action=add" class="btn btn-primary">افزودن میرور جدید</a>
-        <?php endif; ?>
-    </div>
-
-    <?php if ($action === 'add' || $action === 'edit'): ?>
-        <div class="form-container card">
-            <h2><?= $action === 'edit' ? 'ویرایش میرور' : 'افزودن میرور جدید' ?></h2>
-            <?php if ($prefillRequestId): ?>
-                <div class="alert alert-success" style="margin-bottom:1rem;">
-                    این میرور بر اساس درخواست #<?= $prefillRequestId ?> در حال ساخت است. پس از ذخیره، به‌صورت خودکار به آن متصل می‌شود.
-                </div>
-            <?php endif; ?>
-            <form action="<?= SITE_URL ?>/admin/mirrors.php?action=<?= $action ?>&id=<?= $id ?>" method="POST" data-require-category>
-                <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= generateCsrfToken() ?>">
-                <?php if ($prefillRequestId): ?>
-                    <input type="hidden" name="link_request_id" value="<?= $prefillRequestId ?>">
-                <?php endif; ?>
-                
-                <div class="form-row">
-                    <div class="form-group flex-1">
-                        <label for="name_fa">نام فارسی <span class="required">*</span></label>
-                        <input type="text" id="name_fa" name="name_fa"
-                            value="<?= htmlspecialchars($currentMirror['name_fa'] ?? $prefill['name_fa'] ?? '') ?>"
-                            required autocomplete="off">
-                    </div>
-                    <div class="form-group flex-1">
-                        <label for="name_en">نام انگلیسی</label>
-                        <input type="text" id="name_en" name="name_en"
-                            value="<?= htmlspecialchars($currentMirror['name_en'] ?? $prefill['name_en'] ?? '') ?>"
-                            dir="ltr" autocomplete="off">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group flex-2">
-                        <label for="url">آدرس اینترنتی (URL) <span class="required">*</span></label>
-                        <input type="url" id="url" name="url"
-                            value="<?= htmlspecialchars($currentMirror['url'] ?? $prefill['url'] ?? '') ?>"
-                            dir="ltr" required placeholder="https://example.com/mirror" autocomplete="off">
-                    </div>
-                    <div class="form-group flex-1">
-                        <label>پروتکل‌ها <span class="required">*</span></label>
-                        <small class="form-hint">چند پروتکل را انتخاب کنید؛ برای «سفارشی» نام پروتکل را وارد کنید.</small>
-                        <div class="protocol-picker">
-                            <?php
-                            $selectedProtocols = $currentProtocols;
-                            if (empty($selectedProtocols) && !empty($prefill['protocol'])) {
-                                $selectedProtocols = normalizeProtocols([$prefill['protocol']]);
-                            }
-                            foreach ($protocolOptions as $val => $label):
-                                $selected = array_values(array_filter($selectedProtocols, fn($p) => $p['protocol'] === $val));
-                                $customValue = $selected[0]['custom_label'] ?? '';
-                            ?>
-                                <label class="protocol-checkbox">
-                                    <input type="checkbox" name="protocols[]" value="<?= $val ?>" <?= $selected ? 'checked' : '' ?>>
-                                    <span><?= htmlspecialchars($label) ?></span>
-                                </label>
-                                <?php if ($val === 'custom'): ?>
-                                    <input class="custom-protocol-input" type="text" name="custom_protocols[]" maxlength="100" placeholder="مثلاً: HTTP/2" value="<?= htmlspecialchars($customValue) ?>" <?= $selected ? '' : 'disabled' ?>>
-                                <?php else: ?>
-                                    <input type="hidden" name="custom_protocols[]" value="">
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="slug">نامک (Slug)</label>
-                    <input type="text" id="slug" name="slug"
-                        value="<?= htmlspecialchars($currentMirror['slug'] ?? '') ?>"
-                        dir="ltr" placeholder="خودکار" autocomplete="off">
-                </div>
-
-                <div class="form-group">
-                    <label>دسته‌بندی‌ها <span class="required">*</span></label>
-                    <small class="form-hint">می‌توانید میرور را به چند دسته‌بندی اختصاص دهید.</small>
-                    <div class="category-picker">
-                        <?php if (empty($categories)): ?>
-                            <p class="empty-state" style="grid-column:1/-1;padding:1rem;">دسته‌بندی‌ای موجود نیست.</p>
-                        <?php else: ?>
-                            <?php foreach ($categories as $cat): ?>
-                                <label class="category-checkbox">
-                                    <input type="checkbox" name="category_ids[]" value="<?= $cat['id'] ?>"
-                                        <?= in_array((int)$cat['id'], $currentCatIds, true) ? 'checked' : '' ?>>
-                                    <span><?= htmlspecialchars($cat['name']) ?></span>
-                                </label>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="status">وضعیت</label>
-                    <select id="status" name="status">
-                        <option value="active" <?= ($currentMirror['status'] ?? 'active') === 'active' ? 'selected' : '' ?>>فعال</option>
-                        <option value="inactive" <?= ($currentMirror['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>غیرفعال</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">توضیحات</label>
-                    <textarea id="description" name="description" rows="4"><?= htmlspecialchars($currentMirror['description'] ?? $prefill['description'] ?? '') ?></textarea>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">ذخیره</button>
-                    <a href="<?= SITE_URL ?>/admin/mirrors.php" class="btn btn-outline">انصراف</a>
-                </div>
-            </form>
         </div>
-    <?php else: ?>
         <div class="table-container card">
             <table class="data-table">
                 <thead>
@@ -540,6 +338,7 @@ renderHeader('مدیریت میرورها', true);
                 </tbody>
             </table>
         </div>
+
     <?php endif; ?>
 </section>
 
