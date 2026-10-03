@@ -15,7 +15,8 @@ if ($query) {
     $stmt->execute([$like, $like, $like, $like]);
     $results = $stmt->fetchAll();
     foreach ($results as &$m) {
-        $m['categories'] = getMirrorCategories($pdo, $m['id']);
+        $m['categories'] = getMirrorCategoryTags($pdo, $m['id']);
+        $m['protocols'] = getMirrorProtocols($pdo, $m['id']);
     }
     unset($m);
 }
@@ -57,7 +58,7 @@ renderHeader('جستجو');
                         <p class="mirror-desc"><?= htmlspecialchars($mirror['description']) ?></p>
                     <?php endif; ?>
                     <div class="mirror-meta">
-                        <span class="badge <?= getProtocolBadgeClass($mirror['protocol'] ?? 'https') ?> protocol-badge"><?= htmlspecialchars(strtoupper(getProtocolLabel($mirror['protocol'] ?? 'https'))) ?></span>
+                        <?= protocolBadges($mirror['protocols'] ?? getMirrorProtocols($pdo, $mirror['id'])) ?>
                         <?php foreach ($mirror['categories'] as $c): ?>
                             <a href="<?= SITE_URL ?>/category.php?slug=<?= htmlspecialchars($c['slug']) ?>" class="badge badge-primary"><?= htmlspecialchars($c['name']) ?></a>
                         <?php endforeach; ?>
