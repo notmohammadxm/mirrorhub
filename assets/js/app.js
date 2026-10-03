@@ -449,6 +449,131 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
+       Mirror Editor v2 UX
+       ============================================================ */
+    const mirrorForm = document.querySelector('.mirror-form-shell');
+    if (mirrorForm && document.querySelector('.mirror-form-page')) {
+        const q = selector => mirrorForm.querySelector(selector);
+        const qa = selector => Array.from(mirrorForm.querySelectorAll(selector));
+
+        const nameFaField = q('#name_fa');
+        const nameEnField = q('#name_en');
+        const urlField = q('#url');
+        const statusField = q('#status');
+        const descriptionField = q('#description');
+        const customCheckbox = q('input[name="protocols[]"][value="custom"]');
+        const customPanel = document.getElementById('custom-protocol-panel');
+        const customInput = q('input[name="custom_protocol"]');
+
+        const previewName = document.getElementById('preview-name');
+        const previewNameEn = document.getElementById('preview-name-en');
+        const previewUrl = document.getElementById('preview-url');
+        const previewDescription = document.getElementById('preview-description');
+        const previewProtocols = document.getElementById('preview-protocols');
+        const previewStatus = document.getElementById('preview-status');
+
+        const protocolCount = document.getElementById('protocol-selected-count');
+        const categoryCount = document.getElementById('category-selected-count');
+
+        const checks = {
+            name: document.getElementById('check-name'),
+            url: document.getElementById('check-url'),
+            protocol: document.getElementById('check-protocol'),
+            category: document.getElementById('check-category'),
+        };
+
+        const faNumber = value => String(value).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+
+        const setCheck = (el, ok) => {
+            if (!el) return;
+            el.classList.toggle('ok', !!ok);
+            const dot = el.querySelector('span');
+            if (dot) dot.innerHTML = ok ? Icons.check : '';
+        };
+
+        const syncPreview = () => {
+            const fa = nameFaField?.value.trim() || 'نام میرور';
+            const en = nameEnField?.value.trim() || 'Mirror Name';
+            const url = urlField?.value.trim() || 'https://example.com/mirror';
+            const desc = descriptionField?.value.trim() || 'توضیحات میرور در اینجا نمایش داده می‌شود.';
+            const selected = qa('input[name="protocols[]"]:checked');
+            const categories = qa('input[name="category_ids[]"]:checked');
+            const statusActive = statusField?.value !== 'inactive';
+
+            if (previewName) previewName.textContent = fa;
+            if (previewNameEn) previewNameEn.textContent = en;
+            if (previewUrl) previewUrl.textContent = url;
+            if (previewDescription) previewDescription.textContent = desc;
+            if (previewStatus) {
+                previewStatus.textContent = statusActive ? 'فعال' : 'غیرفعال';
+                previewStatus.className = 'badge ' + (statusActive ? 'badge-success' : 'badge-warning');
+            }
+            if (previewProtocols) {
+                previewProtocols.innerHTML = selected.length
+                    ? selected.map(input => {
+                        const label = input.closest('.mirror-protocol-card')?.querySelector('.mirror-protocol-main strong')?.textContent.trim() || input.value.toUpperCase();
+                        if (input.value === 'custom') {
+                            return customInput?.value.trim()
+                                ? '<span class="badge badge-default protocol-badge">' + escapeHtml(customInput.value.trim().toUpperCase()) + '</span>'
+                                : '';
+                        }
+                        return '<span class="badge ' + ({
+                            https: 'badge-success',
+                            http: 'badge-warning',
+                            ftp: 'badge-info',
+                            rsync: 'badge-primary'
+                        }[input.value] || 'badge-default') + ' protocol-badge">' + escapeHtml(label.toUpperCase()) + '</span>';
+                    }).join('') || '<span class="badge badge-default">پروتکلی انتخاب نشده</span>'
+                    : '<span class="badge badge-default">پروتکلی انتخاب نشده</span>';
+            }
+
+            if (protocolCount) protocolCount.textContent = faNumber(selected.length) + ' انتخاب';
+            if (categoryCount) categoryCount.textContent = faNumber(categories.length) + ' انتخاب';
+
+            setCheck(checks.name, !!nameFaField?.value.trim());
+            setCheck(checks.url, !!urlField?.value.trim() && !!urlField?.checkValidity());
+            const customValid = !customCheckbox?.checked || !!customInput?.value.trim();
+            setCheck(checks.protocol, selected.length > 0 && customValid);
+            setCheck(checks.category, categories.length > 0);
+        };
+
+        const syncCustomProtocol = () => {
+            const active = !!customCheckbox?.checked;
+            if (customPanel) customPanel.classList.toggle('is-visible', active);
+            if (customInput) {
+                customInput.disabled = !active;
+                if (!active) customInput.value = '';
+            }
+            syncPreview();
+        };
+
+        [nameFaField, nameEnField, urlField, statusField, descriptionField, customInput].forEach(field => {
+            if (!field) return;
+            field.addEventListener('input', syncPreview);
+            field.addEventListener('change', syncPreview);
+        });
+
+        qa('input[name="protocols[]"], input[name="category_ids[]"]').forEach(input => {
+            input.addEventListener('change', syncPreview);
+        });
+        customCheckbox?.addEventListener('change', syncCustomProtocol);
+
+        syncCustomProtocol();
+        syncPreview();
+
+        mirrorForm.addEventListener('submit', e => {
+            const protocolInputs = qa('input[name="protocols[]"]:checked');
+            const categoryInputs = qa('input[name="category_ids[]"]:checked');
+            const customValid = !customCheckbox?.checked || !!customInput?.value.trim();
+            if (!nameFaField?.value.trim() || !urlField?.checkValidity() || !protocolInputs.length || !customValid || !categoryInputs.length) {
+                e.preventDefault();
+                syncPreview();
+                showAlert('نام، آدرس معتبر، حداقل یک پروتکل و حداقل یک دسته‌بندی الزامی است.', 'warning', 'اطلاعات ناقص');
+            }
+        });
+    }
+
+    /* ============================================================
        Focus Search on '/' key
        ============================================================ */
     document.addEventListener('keydown', (e) => {
