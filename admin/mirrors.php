@@ -124,6 +124,14 @@ renderHeader('مدیریت میرورها', true);
 
 <section class="section">
     <?php if ($action === 'add' || $action === 'edit'): ?>
+        <?php
+            $categoryGroups = [];
+            foreach ($categories as $cat) {
+                $parentId = (int)($cat['parent_id'] ?? 0);
+                $categoryGroups[$parentId][] = $cat;
+            }
+        ?>
+
         <div class="mirror-form-page">
             <div class="mirror-form-header">
                 <div class="mirror-form-title-wrap">
@@ -278,12 +286,12 @@ renderHeader('مدیریت میرورها', true);
                                                     </label>
                                                 <?php endforeach; ?>
                                             </div>
-                                    
     <?php else: ?>
         <div class="section-header">
             <h1 class="section-title">مدیریت میرورها</h1>
             <a href="<?= SITE_URL ?>/admin/mirrors.php?action=add" class="btn btn-primary">افزودن میرور جدید</a>
         </div>
+
         <div class="table-container card">
             <table class="data-table">
                 <thead>
@@ -338,8 +346,5 @@ renderHeader('مدیریت میرورها', true);
                 </tbody>
             </table>
         </div>
-
     <?php endif; ?>
-</section>
-
-<?php renderFooter(); ?>
+</section><?php renderFooter(); ?>
