@@ -123,11 +123,30 @@ function normalizeProtocols($protocols, $customProtocols = []) {
     return array_values($result);
 }
 
+function hasTable($pdo, $table) {
+    static $cache = [];
+    $table = (string)$table;
+    if (array_key_exists($table, $cache)) return $cache[$table];
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE " . $pdo->quote($table));
+        $cache[$table] = (bool)$stmt->fetchColumn();
+    } catch (Throwable $e) {
+        $cache[$table] = false;
+    }
+    return $cache[$table];
+}
+
 function getMirrorProtocols($pdo, $mirrorId) {
-    $stmt = $pdo->prepare("SELECT protocol, custom_label FROM mirror_protocols WHERE mirror_id = ? ORDER BY sort_order ASC, id ASC");
-    $stmt->execute([(int)$mirrorId]);
-    $rows = $stmt->fetchAll();
-    if ($rows) return $rows;
+    if (hasTable($pdo, 'mirror_protocols')) {
+        try {
+            $stmt = $pdo->prepare("SELECT protocol, custom_label FROM mirror_protocols WHERE mirror_id = ? ORDER BY sort_order ASC, id ASC");
+            $stmt->execute([(int)$mirrorId]);
+            $rows = $stmt->fetchAll();
+            if ($rows) return $rows;
+        } catch (Throwable $e) {
+            // Fall back to legacy protocol field.
+        }
+    }
 
     $mirror = getMirrorById($pdo, $mirrorId);
     if (!$mirror || empty($mirror['protocol'])) return [];
@@ -138,27 +157,34 @@ function getMirrorProtocols($pdo, $mirrorId) {
 }
 
 function setMirrorProtocols($pdo, $mirrorId, array $protocols) {
+    if (!hasTable($pdo, 'mirror_protocols')) return false;
     $pdo->prepare("DELETE FROM mirror_protocols WHERE mirror_id = ?")->execute([(int)$mirrorId]);
     $stmt = $pdo->prepare("INSERT INTO mirror_protocols (mirror_id, protocol, custom_label, sort_order) VALUES (?, ?, ?, ?)");
     foreach (array_values($protocols) as $i => $item) {
         $stmt->execute([(int)$mirrorId, $item['protocol'], $item['custom_label'] ?? null, $i]);
     }
+    return true;
 }
 
 function getRequestProtocols($pdo, $requestId) {
-    $stmt = $pdo->prepare("SELECT protocol, custom_label FROM request_protocols WHERE request_id = ? ORDER BY sort_order ASC, id ASC");
-    $stmt->execute([(int)$requestId]);
-    $rows = $stmt->fetchAll();
-    if ($rows) return $rows;
-    return [];
+    if (!hasTable($pdo, 'request_protocols')) return [];
+    try {
+        $stmt = $pdo->prepare("SELECT protocol, custom_label FROM request_protocols WHERE request_id = ? ORDER BY sort_order ASC, id ASC");
+        $stmt->execute([(int)$requestId]);
+        return $stmt->fetchAll();
+    } catch (Throwable $e) {
+        return [];
+    }
 }
 
 function setRequestProtocols($pdo, $requestId, array $protocols) {
+    if (!hasTable($pdo, 'request_protocols')) return false;
     $pdo->prepare("DELETE FROM request_protocols WHERE request_id = ?")->execute([(int)$requestId]);
     $stmt = $pdo->prepare("INSERT INTO request_protocols (request_id, protocol, custom_label, sort_order) VALUES (?, ?, ?, ?)");
     foreach (array_values($protocols) as $i => $item) {
         $stmt->execute([(int)$requestId, $item['protocol'], $item['custom_label'] ?? null, $i]);
     }
+    return true;
 }
 
 function protocolBadges(array $protocols) {
