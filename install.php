@@ -46,7 +46,7 @@ try {
                 `name_en` VARCHAR(120) NOT NULL,
                 `slug` VARCHAR(120) NOT NULL UNIQUE,
                 `url` VARCHAR(255) NOT NULL,
-                `protocol` ENUM('https','http','ftp','rsync','other') DEFAULT 'https',
+                `protocol` VARCHAR(32) DEFAULT 'https',
                 `description` TEXT,
                 `status` ENUM('active', 'inactive') DEFAULT 'active',
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -71,6 +71,8 @@ try {
                 `url` VARCHAR(255) NOT NULL,
                 `protocol` ENUM('https','http','ftp','rsync','other') DEFAULT 'https',
                 `category_name` VARCHAR(120),
+                `parent_category_id` INT DEFAULT NULL,
+                `category_id` INT DEFAULT NULL,
                 `description` TEXT,
                 `status` ENUM('pending', 'reviewed') DEFAULT 'pending',
                 `admin_note` TEXT,
