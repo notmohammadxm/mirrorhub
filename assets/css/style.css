@@ -3106,10 +3106,14 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     }
 
     .data-table tbody tr > td.actions {
+        display: flex !important;
         align-items: center;
+        gap: .55rem;
     }
 
     .data-table tbody tr > td.actions::before {
+        content: attr(data-label);
+        flex: 0 0 30%;
         align-self: center;
     }
 
@@ -3118,20 +3122,13 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
         margin: 0;
     }
 
-    .data-table tbody tr > td.actions {
-        grid-template-columns: minmax(82px, 30%) minmax(0, 1fr);
-    }
-
-    .data-table tbody tr > td.actions > * {
-        justify-self: start;
-    }
-
     .data-table tbody tr > td.actions .inline-form {
         display: inline-flex;
     }
 
     .data-table tbody tr > td[data-label="عملیات"] > * {
         display: inline-flex;
+        flex-wrap: wrap;
     }
 
     .data-table tbody tr > td[data-label="پروتکل"] .protocol-badge {
