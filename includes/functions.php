@@ -73,13 +73,13 @@ function getProtocolOptions() {
         'http'  => 'HTTP',
         'ftp'   => 'FTP',
         'rsync' => 'Rsync',
-        'other' => 'سایر',
+        'custom' => 'سفارشی',
     ];
 }
 
-function getProtocolLabel($protocol) {
-    $opts = getProtocolOptions();
-    return $opts[$protocol] ?? 'سایر';
+function getProtocolLabel($protocol, $customLabel = null) {
+    if ($protocol === 'custom') return $customLabel ?: 'سفارشی';
+    return getProtocolOptions()[$protocol] ?? $customLabel ?? 'سفارشی';
 }
 
 function getProtocolBadgeClass($protocol) {
@@ -90,6 +90,75 @@ function getProtocolBadgeClass($protocol) {
         'rsync' => 'badge-primary',
         default => 'badge-default',
     };
+}
+
+function normalizeProtocols($protocols, $customProtocols = []) {
+    $protocols = is_array($protocols) ? $protocols : [$protocols];
+    $customProtocols = is_array($customProtocols) ? $customProtocols : [$customProtocols];
+    $allowed = array_keys(getProtocolOptions());
+    $result = [];
+    foreach ($protocols as $index => $protocol) {
+        $protocol = trim((string)$protocol);
+        if (!in_array($protocol, $allowed, true)) continue;
+        $custom = null;
+        if ($protocol === 'custom') {
+            $custom = trim((string)($customProtocols[$index] ?? ''));
+            if ($custom === '') continue;
+            $custom = mb_substr($custom, 0, 100);
+        }
+        $key = $protocol . '|' . ($custom ?? '');
+        if (isset($result[$key])) continue;
+        $result[$key] = ['protocol' => $protocol, 'custom_label' => $custom];
+    }
+    return array_values($result);
+}
+
+function getMirrorProtocols($pdo, $mirrorId) {
+    $stmt = $pdo->prepare("SELECT protocol, custom_label FROM mirror_protocols WHERE mirror_id = ? ORDER BY sort_order ASC, id ASC");
+    $stmt->execute([(int)$mirrorId]);
+    $rows = $stmt->fetchAll();
+    if ($rows) return $rows;
+
+    $mirror = getMirrorById($pdo, $mirrorId);
+    if (!$mirror || empty($mirror['protocol'])) return [];
+    return [[
+        'protocol' => $mirror['protocol'] === 'other' ? 'custom' : $mirror['protocol'],
+        'custom_label' => $mirror['protocol'] === 'other' ? 'سایر' : null
+    ]];
+}
+
+function setMirrorProtocols($pdo, $mirrorId, array $protocols) {
+    $pdo->prepare("DELETE FROM mirror_protocols WHERE mirror_id = ?")->execute([(int)$mirrorId]);
+    $stmt = $pdo->prepare("INSERT INTO mirror_protocols (mirror_id, protocol, custom_label, sort_order) VALUES (?, ?, ?, ?)");
+    foreach (array_values($protocols) as $i => $item) {
+        $stmt->execute([(int)$mirrorId, $item['protocol'], $item['custom_label'] ?? null, $i]);
+    }
+}
+
+function getRequestProtocols($pdo, $requestId) {
+    $stmt = $pdo->prepare("SELECT protocol, custom_label FROM request_protocols WHERE request_id = ? ORDER BY sort_order ASC, id ASC");
+    $stmt->execute([(int)$requestId]);
+    $rows = $stmt->fetchAll();
+    if ($rows) return $rows;
+    return [];
+}
+
+function setRequestProtocols($pdo, $requestId, array $protocols) {
+    $pdo->prepare("DELETE FROM request_protocols WHERE request_id = ?")->execute([(int)$requestId]);
+    $stmt = $pdo->prepare("INSERT INTO request_protocols (request_id, protocol, custom_label, sort_order) VALUES (?, ?, ?, ?)");
+    foreach (array_values($protocols) as $i => $item) {
+        $stmt->execute([(int)$requestId, $item['protocol'], $item['custom_label'] ?? null, $i]);
+    }
+}
+
+function protocolBadges(array $protocols) {
+    $html = '';
+    foreach ($protocols as $item) {
+        $protocol = $item['protocol'] ?? '';
+        $label = getProtocolLabel($protocol, $item['custom_label'] ?? null);
+        $html .= '<span class="badge ' . getProtocolBadgeClass($protocol) . ' protocol-badge">' . htmlspecialchars(strtoupper($label)) . '</span>';
+    }
+    return $html;
 }
 
 /* ============================================================
@@ -178,6 +247,7 @@ function getRecentMirrors($pdo, $limit = 12) {
     $mirrors = $stmt->fetchAll();
     foreach ($mirrors as &$m) {
         $m['categories'] = getMirrorCategories($pdo, $m['id']);
+        $m['protocols'] = getMirrorProtocols($pdo, $m['id']);
     }
     return $mirrors;
 }
