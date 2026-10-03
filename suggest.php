@@ -3,6 +3,14 @@ require_once 'includes/db.php';
 require_once 'includes/functions.php';
 require_once 'includes/layout.php';
 
+function normalizePhoneInput($value) {
+    $value = strtr((string)$value, [
+        '۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9',
+        '٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9',
+    ]);
+    return preg_replace('/[^0-9+]/', '', trim($value));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrfToken($_POST[CSRF_TOKEN_NAME] ?? '')) {
         flash('error', 'توکن امنیتی نامعتبر است. لطفاً دوباره تلاش کنید.');
@@ -11,32 +19,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $name_fa = sanitize($_POST['name_fa'] ?? '');
     $name_en = sanitize($_POST['name_en'] ?? '');
-    $url = filter_var(trim($_POST['url'] ?? ''), FILTER_SANITIZE_URL);
     $protocols = normalizeProtocols($_POST['protocols'] ?? [], $_POST['custom_protocols'] ?? []);
-    $parent_category_id = (int)($_POST['parent_category_id'] ?? 0);
-    $category_id = (int)($_POST['category_id'] ?? 0);
-    $parentCategory = $parent_category_id ? getCategoryById($pdo, $parent_category_id) : null;
-    $childCategory = $category_id ? getCategoryById($pdo, $category_id) : null;
-    $category_name = $parentCategory && $childCategory && (int)$childCategory['parent_id'] === $parent_category_id
-        ? $parentCategory['name'] . ' / ' . $childCategory['name']
-        : '';
     $description = sanitize($_POST['description'] ?? '');
+    $email = trim((string)($_POST['email'] ?? ''));
+    $phone = normalizePhoneInput($_POST['phone'] ?? '');
 
-    if (empty($name_fa) || empty($url) || empty($protocols) || !$parentCategory || !$childCategory || (int)$childCategory['parent_id'] !== $parent_category_id) {
-        flash('error', 'لطفاً تمام فیلدهای ضروری را پر کنید.');
+    $links = [];
+    foreach ((array)($_POST['urls'] ?? []) as $rawUrl) {
+        $url = filter_var(trim((string)$rawUrl), FILTER_SANITIZE_URL);
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) continue;
+        if (mb_strlen($url) > 1000) continue;
+        if (!in_array($url, $links, true)) $links[] = $url;
+    }
+
+    if (empty($name_fa) || empty($links) || empty($protocols) || empty($phone)) {
+        flash('error', 'نام، حداقل یک لینک، حداقل یک پروتکل و شماره همراه الزامی است.');
         redirect(SITE_URL . '/suggest.php');
     }
 
-    if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        flash('error', 'لطفاً یک آدرس اینترنتی معتبر وارد کنید.');
+    if (mb_strlen($phone) < 10 || mb_strlen($phone) > 15 || !preg_match('/^\+?[0-9]+$/', $phone)) {
+        flash('error', 'شماره همراه واردشده معتبر نیست.');
+        redirect(SITE_URL . '/suggest.php');
+    }
+
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        flash('error', 'آدرس ایمیل واردشده معتبر نیست.');
         redirect(SITE_URL . '/suggest.php');
     }
 
     try {
         $protocol = $protocols[0]['protocol'];
-        $stmt = $pdo->prepare("INSERT INTO requests (name_fa, name_en, url, protocol, parent_category_id, category_id, category_name, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
-        $stmt->execute([$name_fa, $name_en, $url, $protocol, $parent_category_id, $category_id, $category_name, $description]);
-        setRequestProtocols($pdo, (int)$pdo->lastInsertId(), $protocols);
+        $stmt = $pdo->prepare(
+            "INSERT INTO requests (name_fa, name_en, url, protocol, parent_category_id, category_id, category_name, description, status, email, phone)
+             VALUES (?, ?, ?, ?, NULL, NULL, NULL, ?, 'pending', ?, ?)"
+        );
+        $stmt->execute([
+            $name_fa,
+            $name_en,
+            $links[0],
+            $protocol,
+            $description,
+            $email !== '' ? $email : null,
+            $phone
+        ]);
+
+        $requestId = (int)$pdo->lastInsertId();
+        setRequestProtocols($pdo, $requestId, $protocols);
+        setRequestLinks($pdo, $requestId, $links);
+
         flash('success', 'پیشنهاد شما با موفقیت ثبت شد و پس از بررسی مدیران منتشر خواهد شد.');
         redirect(SITE_URL . '/suggest.php');
     } catch (PDOException $e) {
@@ -45,9 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$parentCategories = getCategories($pdo, null);
-$allCategories = getAllCategories($pdo);
-$childCategories = array_values(array_filter($allCategories, fn($cat) => !empty($cat['parent_id'])));
 $protocolOptions = getProtocolOptions();
 renderHeader('پیشنهاد میرور جدید');
 ?>
@@ -58,7 +85,7 @@ renderHeader('پیشنهاد میرور جدید');
         <div>
             <span class="eyebrow">MirrorHub • پیشنهاد جامعه</span>
             <h1 class="section-title">پیشنهاد یا درخواست میرور جدید</h1>
-            <p class="section-desc">اطلاعات میرور را وارد کنید تا بعد از بررسی مدیر، به فهرست عمومی اضافه شود.</p>
+            <p class="section-desc">اطلاعات میرور و راه‌های دسترسی را وارد کنید تا بعد از بررسی مدیر، به فهرست عمومی اضافه شود.</p>
         </div>
     </div>
 
@@ -68,7 +95,7 @@ renderHeader('پیشنهاد میرور جدید');
         <div class="form-section">
             <div class="form-section-head">
                 <span class="step-badge">۱</span>
-                <div><h2>اطلاعات میرور</h2><p>نام و آدرس سرویس را ثبت کنید.</p></div>
+                <div><h2>اطلاعات میرور</h2><p>نام میرور را ثبت کنید.</p></div>
             </div>
             <div class="form-row">
                 <div class="form-group flex-1">
@@ -76,19 +103,36 @@ renderHeader('پیشنهاد میرور جدید');
                     <input type="text" id="name_fa" name="name_fa" required maxlength="120" placeholder="مثلاً: آرشیو اوبونتو" autocomplete="off">
                 </div>
                 <div class="form-group flex-1">
-                    <label for="name_en">نام انگلیسی میرور</label>
+                    <label for="name_en">نام انگلیسی میرور <span class="form-optional">اختیاری</span></label>
                     <input type="text" id="name_en" name="name_en" maxlength="120" placeholder="Ubuntu Archive" dir="ltr" autocomplete="off">
                 </div>
-            </div>
-            <div class="form-group">
-                <label for="url">آدرس اینترنتی (URL) <span class="required">*</span></label>
-                <div class="input-with-prefix"><span>URL</span><input type="url" id="url" name="url" required maxlength="255" placeholder="https://example.com/mirror" dir="ltr" autocomplete="off"></div>
             </div>
         </div>
 
         <div class="form-section">
             <div class="form-section-head">
                 <span class="step-badge">۲</span>
+                <div><h2>لینک‌های میرور</h2><p>هر تعداد لینک که در اختیار دارید اضافه کنید.</p></div>
+            </div>
+            <div class="request-links-list" id="request-links-list">
+                <div class="request-link-row">
+                    <span class="request-link-index">۱</span>
+                    <input type="url" name="urls[]" required maxlength="1000" placeholder="https://example.com/mirror" dir="ltr" autocomplete="off">
+                    <button type="button" class="request-link-remove btn btn-sm btn-outline" aria-label="حذف لینک" disabled><?= icon('x', 15) ?></button>
+                </div>
+            </div>
+            <button type="button" class="btn btn-outline request-link-add" id="add-request-link">
+                <?= icon('plus-circle', 15) ?><span>افزودن لینک</span>
+            </button>
+            <div class="selection-note request-link-note">
+                <span class="selection-dot"></span>
+                می‌توانید هر تعداد مسیر دسترسی را ثبت کنید؛ همه لینک‌ها برای بررسی مدیر ذخیره می‌شوند.
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-head">
+                <span class="step-badge">۳</span>
                 <div><h2>پروتکل‌های دسترسی</h2><p>هر تعداد پروتکل که میرور پشتیبانی می‌کند انتخاب کنید.</p></div>
             </div>
             <div class="protocol-picker protocol-picker-large">
@@ -111,39 +155,28 @@ renderHeader('پیشنهاد میرور جدید');
 
         <div class="form-section">
             <div class="form-section-head">
-                <span class="step-badge">۳</span>
-                <div><h2>دسته‌بندی</h2><p>برای مرتب‌سازی دقیق، انتخاب والد و زیر‌دسته هر دو اجباری است.</p></div>
+                <span class="step-badge">۴</span>
+                <div><h2>اطلاعات هماهنگی</h2><p>برای پیگیری و هماهنگی، شماره همراه الزامی است.</p></div>
             </div>
             <div class="form-row">
                 <div class="form-group flex-1">
-                    <label for="parent_category_id">والد <span class="required">*</span></label>
-                    <select id="parent_category_id" name="parent_category_id" required>
-                        <option value="">انتخاب دسته والد...</option>
-                        <?php foreach ($parentCategories as $cat): ?>
-                            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <label for="phone">شماره همراه <span class="required">*</span></label>
+                    <input type="tel" id="phone" name="phone" required maxlength="20" inputmode="tel" placeholder="مثلاً 09121234567" dir="ltr" autocomplete="tel">
                 </div>
                 <div class="form-group flex-1">
-                    <label for="category_id">زیر‌دسته <span class="required">*</span></label>
-                    <select id="category_id" name="category_id" required disabled>
-                        <option value="">ابتدا والد را انتخاب کنید...</option>
-                        <?php foreach ($childCategories as $cat): ?>
-                            <option value="<?= $cat['id'] ?>" data-parent="<?= $cat['parent_id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <label for="email">ایمیل <span class="form-optional">اختیاری</span></label>
+                    <input type="email" id="email" name="email" maxlength="190" placeholder="you@example.com" dir="ltr" autocomplete="email">
                 </div>
             </div>
-            <div class="selection-note"><span class="selection-dot"></span> والد فقط برای ساختار و نمایش متادیتا استفاده می‌شود؛ لینک اصلی به زیر‌دسته خواهد بود.</div>
         </div>
 
         <div class="form-section">
             <div class="form-section-head">
-                <span class="step-badge">۴</span>
+                <span class="step-badge">۵</span>
                 <div><h2>توضیحات</h2><p>جزئیات مفید درباره محتوا، سرعت یا کاربرد میرور را بنویسید.</p></div>
             </div>
             <div class="form-group">
-                <label for="description">توضیحات (اختیاری)</label>
+                <label for="description">توضیحات <span class="form-optional">اختیاری</span></label>
                 <textarea id="description" name="description" rows="5" maxlength="1000" placeholder="مثلاً: میرور بسته‌های Ubuntu و Debian با دسترسی سریع داخلی..."></textarea>
                 <div class="field-counter"><span id="description-count">۰</span> / ۱۰۰۰</div>
             </div>
