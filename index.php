@@ -3,12 +3,17 @@ require_once 'includes/db.php';
 require_once 'includes/functions.php';
 require_once 'includes/layout.php';
 
-$topCategories = getCategories($pdo, null);
+$stmt = $pdo->query("SELECT c.*, p.name AS parent_name, p.slug AS parent_slug
+    FROM categories c
+    INNER JOIN categories p ON p.id = c.parent_id
+    ORDER BY p.sort_order ASC, p.name ASC, c.sort_order ASC, c.name ASC");
+$topCategories = $stmt->fetchAll();
 
 $stmt = $pdo->query("SELECT * FROM mirrors WHERE status = 'active' ORDER BY created_at DESC LIMIT 12");
 $recentMirrors = $stmt->fetchAll();
 foreach ($recentMirrors as &$mirror) {
-    $mirror['categories'] = getMirrorCategories($pdo, $mirror['id']);
+    $mirror['categories'] = getMirrorCategoryTags($pdo, $mirror['id']);
+    $mirror['protocols'] = getMirrorProtocols($pdo, $mirror['id']);
 }
 unset($mirror);
 
@@ -27,7 +32,7 @@ renderHeader('خانه');
 <section class="section">
     <div class="section-header">
         <h2 class="section-title">دسته‌بندی‌ها</h2>
-        <span class="badge badge-primary"><?= count($topCategories) ?> دسته</span>
+        <span class="badge badge-primary"><?= count($topCategories) ?> زیر‌دسته</span>
     </div>
     <div class="grid grid-cols-3">
         <?php if (empty($topCategories)): ?>
@@ -35,6 +40,7 @@ renderHeader('خانه');
         <?php else: ?>
             <?php foreach ($topCategories as $cat): ?>
                 <a href="<?= SITE_URL ?>/category.php?slug=<?= htmlspecialchars($cat['slug']) ?>" class="card category-card">
+                    <span class="category-parent-tag"><?= htmlspecialchars($cat['parent_name']) ?></span>
                     <h3><?= htmlspecialchars($cat['name']) ?></h3>
                     <?php if ($cat['description']): ?>
                         <p><?= htmlspecialchars(excerpt($cat['description'], 80)) ?></p>
@@ -68,7 +74,7 @@ renderHeader('خانه');
                     <p class="mirror-desc"><?= htmlspecialchars(excerpt($mirror['description'], 120)) ?></p>
                 <?php endif; ?>
                 <div class="mirror-meta">
-                    <span class="badge <?= getProtocolBadgeClass($mirror['protocol'] ?? 'https') ?> protocol-badge"><?= htmlspecialchars(strtoupper(getProtocolLabel($mirror['protocol'] ?? 'https'))) ?></span>
+                    <?= protocolBadges($mirror['protocols'] ?? getMirrorProtocols($pdo, $mirror['id'])) ?>
                     <?php foreach ($mirror['categories'] as $c): ?>
                         <a href="<?= SITE_URL ?>/category.php?slug=<?= htmlspecialchars($c['slug']) ?>" class="badge badge-primary"><?= htmlspecialchars($c['name']) ?></a>
                     <?php endforeach; ?>
