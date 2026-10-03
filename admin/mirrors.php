@@ -101,6 +101,7 @@ if ($action === 'edit' && $id) {
 
 $prefill = [];
 $prefillRequestId = 0;
+$prefillProtocols = [];
 if ($action === 'add' && $fromRequest > 0) {
     $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ?");
     $stmt->execute([$fromRequest]);
@@ -169,7 +170,9 @@ renderHeader('مدیریت میرورها', true);
                         <div class="protocol-picker">
                             <?php
                             $selectedProtocols = $currentProtocols;
-                            if (empty($selectedProtocols) && !empty($prefill['protocol'])) {
+                            if (empty($selectedProtocols) && !empty($prefillProtocols)) {
+                                $selectedProtocols = $prefillProtocols;
+                            } elseif (empty($selectedProtocols) && !empty($prefill['protocol'])) {
                                 $selectedProtocols = normalizeProtocols([$prefill['protocol']]);
                             }
                             foreach ($protocolOptions as $val => $label):
