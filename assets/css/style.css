@@ -1609,3 +1609,117 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     .form-submit-buttons { width: 100%; }
     .form-submit-buttons .btn { flex: 1; }
 }
+
+/* ============ Mirror Editor Extras ============ */
+.mirror-category-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.category-group-title {
+    grid-column: 1 / -1;
+    padding: .55rem .75rem .15rem;
+    color: var(--accent);
+    font-size: .72rem;
+    font-weight: 800;
+}
+.category-child { margin-right: .7rem; }
+.status-select-card {
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+    padding: .9rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+}
+.status-select-copy { display: flex; flex-direction: column; gap: .15rem; }
+.status-select-copy strong { color: var(--text-primary); font-size: .82rem; }
+.status-select-copy small { color: var(--text-muted); font-size: .7rem; line-height: 1.6; }
+.status-select-card select { margin: 0; }
+@media (max-width: 640px) { .mirror-category-picker { grid-template-columns: 1fr; } .category-group-title { grid-column: auto; } }
+
+/* ============ Backup Center ============ */
+.backup-page { max-width: 1040px; margin-inline: auto; }
+.backup-actions-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.backup-card {
+    position: relative;
+    overflow: hidden;
+    padding: 1.35rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(145deg, rgba(163,214,92,.06), transparent 45%), var(--bg-secondary);
+}
+.backup-card::after {
+    content: '';
+    position: absolute; width: 130px; height: 130px; border-radius: 50%;
+    top: -70px; left: -40px; border: 1px solid rgba(163,214,92,.08);
+}
+.backup-card-head { display: flex; gap: .8rem; align-items: center; margin-bottom: .8rem; }
+.backup-icon {
+    width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center;
+    border-radius: 13px; color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(163,214,92,.18);
+}
+.backup-card h2 { font-size: 1rem; margin: 0 0 .15rem; }
+.backup-card p { color: var(--text-muted); font-size: .78rem; line-height: 1.75; margin: 0; }
+.backup-download { margin-top: 1rem; width: 100%; }
+.import-zone {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 250px;
+    padding: 1.2rem;
+    border: 1px dashed rgba(163,214,92,.35);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(163,214,92,.045), rgba(163,214,92,.015));
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--t), background var(--t), transform var(--t);
+}
+.import-zone:hover, .import-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    transform: translateY(-1px);
+}
+.import-zone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.import-zone-icon {
+    width: 58px; height: 58px; display: grid; place-items: center; margin: 0 auto .8rem;
+    border-radius: 16px; color: var(--accent); background: var(--bg-tertiary); border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+.import-zone strong { display: block; color: var(--text-primary); font-size: .9rem; margin-bottom: .25rem; }
+.import-zone span { color: var(--text-muted); font-size: .74rem; }
+.file-pill {
+    display: none; align-items: center; justify-content: space-between; gap: .75rem;
+    margin-top: .8rem; padding: .65rem .8rem; border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm); background: var(--bg-tertiary);
+}
+.file-pill.active { display: flex; }
+.file-pill-main { display: flex; align-items: center; gap: .55rem; min-width: 0; }
+.file-pill-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .78rem; }
+.file-pill-main span { color: var(--text-muted); font-size: .68rem; direction: ltr; }
+.import-options { margin-top: 1rem; }
+.restore-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.restore-mode {
+    position: relative; display: flex; gap: .65rem; align-items: flex-start;
+    padding: .8rem; border: 1px solid var(--border-color); border-radius: var(--radius);
+    background: var(--bg-tertiary); cursor: pointer; transition: all var(--t);
+}
+.restore-mode input { position: absolute; opacity: 0; }
+.restore-mode:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 5px 16px rgba(163,214,92,.07); }
+.restore-mode-mark { width: 20px; height: 20px; flex: 0 0 20px; border-radius: 50%; border: 1px solid var(--border-color); position: relative; }
+.restore-mode:has(input:checked) .restore-mode-mark { border-color: var(--accent); }
+.restore-mode:has(input:checked) .restore-mode-mark::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--accent); }
+.restore-mode-copy strong { display: block; font-size: .8rem; color: var(--text-primary); }
+.restore-mode-copy small { display: block; margin-top: .15rem; font-size: .68rem; color: var(--text-muted); line-height: 1.6; }
+.replace-confirm {
+    display: flex; gap: .6rem; align-items: flex-start; margin-top: .75rem; padding: .75rem .8rem;
+    border-radius: var(--radius); border: 1px solid rgba(236,107,107,.2); background: rgba(236,107,107,.045);
+}
+.replace-confirm input { margin-top: .25rem; accent-color: var(--danger); }
+.replace-confirm span { color: var(--text-secondary); font-size: .72rem; line-height: 1.7; }
+.backup-submit { width: 100%; margin-top: .85rem; }
+.backup-submit:disabled { opacity: .45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.backup-meta {
+    display: flex; gap: .45rem; flex-wrap: wrap; margin-top: 1rem;
+}
+.backup-meta .badge { font-size: .68rem; }
+@media (max-width: 760px) {
+    .backup-actions-grid, .restore-modes { grid-template-columns: 1fr; }
+}
