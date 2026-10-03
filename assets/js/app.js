@@ -324,14 +324,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const suggestionForm = document.getElementById('suggestion-form');
-    if (suggestionForm) {
+    const requestLinksList = document.getElementById('request-links-list');
+    const addRequestLink = document.getElementById('add-request-link');
+
+    if (suggestionForm && requestLinksList) {
+        const updateRequestLinkRows = () => {
+            const rows = Array.from(requestLinksList.querySelectorAll('.request-link-row'));
+            rows.forEach((row, index) => {
+                const number = row.querySelector('.request-link-index');
+                const remove = row.querySelector('.request-link-remove');
+                if (number) number.textContent = String(index + 1).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+                if (remove) remove.disabled = rows.length === 1;
+            });
+        };
+
+        if (addRequestLink) {
+            addRequestLink.addEventListener('click', () => {
+                const row = document.createElement('div');
+                row.className = 'request-link-row';
+
+                const number = document.createElement('span');
+                number.className = 'request-link-index';
+
+                const input = document.createElement('input');
+                input.type = 'url';
+                input.name = 'urls[]';
+                input.required = true;
+                input.maxLength = 1000;
+                input.placeholder = 'https://example.com/mirror';
+                input.dir = 'ltr';
+                input.autocomplete = 'off';
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'request-link-remove btn btn-sm btn-outline';
+                remove.setAttribute('aria-label', 'حذف لینک');
+                remove.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+                row.append(number, input, remove);
+                requestLinksList.appendChild(row);
+                updateRequestLinkRows();
+                input.focus();
+            });
+        }
+
+        requestLinksList.addEventListener('click', (e) => {
+            const remove = e.target.closest('.request-link-remove');
+            if (!remove) return;
+            const row = remove.closest('.request-link-row');
+            if (row && requestLinksList.querySelectorAll('.request-link-row').length > 1) {
+                row.remove();
+                updateRequestLinkRows();
+            }
+        });
+
+        updateRequestLinkRows();
+
         suggestionForm.addEventListener('submit', (e) => {
             const protocols = suggestionForm.querySelectorAll('input[name="protocols[]"]:checked');
-            const parent = document.getElementById('parent_category_id');
-            const child = document.getElementById('category_id');
-            if (!protocols.length || !parent?.value || !child?.value) {
+            const links = suggestionForm.querySelectorAll('input[name="urls[]"]');
+            const phone = document.getElementById('phone');
+            const hasInvalidLink = Array.from(links).some(input => !input.checkValidity() || !input.value.trim());
+            if (!protocols.length || !links.length || hasInvalidLink || !phone?.value.trim()) {
                 e.preventDefault();
-                showAlert('لطفاً حداقل یک پروتکل و هر دو سطح والد و زیر‌دسته را انتخاب کنید.', 'warning', 'اطلاعات ناقص');
+                showAlert('حداقل یک لینک معتبر، یک پروتکل و شماره همراه الزامی است.', 'warning', 'اطلاعات ناقص');
             }
         });
     }
@@ -697,7 +753,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const protocols = (() => {
                 try { return JSON.parse(btn.dataset.protocols || '[]'); } catch (e) { return []; }
             })();
-            const category = btn.dataset.category || '';
             const description = btn.dataset.description || '';
             const status = btn.dataset.status || 'pending';
             const note = btn.dataset.note || '';
@@ -719,7 +774,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                         ${protocols.map(item => { const label = item.custom_label || item.protocol || ''; return label ? '<span class="badge protocol-badge">' + escapeHtml(label.toUpperCase()) + '</span>' : ''; }).join('')}
-                        <span class="badge badge-primary">${escapeHtml(category)}</span>
                     </div>
                     ${description ? `<div><p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.15rem;">توضیحات</p><p style="font-size:0.88rem;line-height:1.7;">${escapeHtml(description)}</p></div>` : ''}
                     <form id="review-form-${id}" method="POST" action="?id=${id}" style="display:flex;flex-direction:column;gap:0.7rem;margin-top:0.4rem;">
