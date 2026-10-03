@@ -54,7 +54,7 @@ try {
                     'name_en' => $row['name_en'],
                     'slug' => $row['slug'],
                     'url' => $row['url'],
-                    'protocol' => $row['protocol'],
+                    'protocols' => getMirrorProtocols($pdo, $row['id']),
                 ];
             }, $rows);
             break;
