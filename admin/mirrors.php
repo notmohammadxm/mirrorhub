@@ -462,17 +462,17 @@ $selectedProtocolValues = array_map(fn($p) => $p['protocol'], $selectedProtocols
                         <?php foreach ($mirrors as $mirror): ?>
                             <?php $names = mirrorDisplayName($mirror); ?>
                             <tr>
-                                <td>
+                                <td data-label="نام">
                                     <?= htmlspecialchars($names['fa']) ?>
                                     <?php if ($names['en'] && $names['en'] !== $names['fa']): ?>
                                         <br><span class="ltr-text" style="font-size:0.75rem;"><?= htmlspecialchars($names['en']) ?></span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="ltr-text"><?= htmlspecialchars(excerpt($mirror['url'], 40)) ?></td>
-                                <td>
+                                <td data-label="آدرس" class="ltr-text"><?= htmlspecialchars(excerpt($mirror['url'], 40)) ?></td>
+                                <td data-label="پروتکل">
                                     <?= protocolBadges($mirror['protocols'] ?? getMirrorProtocols($pdo, $mirror['id'])) ?>
                                 </td>
-                                <td>
+                                <td data-label="دسته‌بندی‌ها">
                                     <?php if (empty($mirror['categories'])): ?>
                                         <span class="badge badge-default">-</span>
                                     <?php else: ?>
@@ -481,8 +481,8 @@ $selectedProtocolValues = array_map(fn($p) => $p['protocol'], $selectedProtocols
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </td>
-                                <td><span class="badge badge-<?= $mirror['status'] === 'active' ? 'success' : 'warning' ?>"><?= $mirror['status'] === 'active' ? 'فعال' : 'غیرفعال' ?></span></td>
-                                <td class="actions">
+                                <td data-label="وضعیت"><span class="badge badge-<?= $mirror['status'] === 'active' ? 'success' : 'warning' ?>"><?= $mirror['status'] === 'active' ? 'فعال' : 'غیرفعال' ?></span></td>
+                                <td data-label="عملیات" class="actions">
                                     <a href="<?= htmlspecialchars($mirror['url']) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">مشاهده</a>
                                     <a href="?action=edit&id=<?= $mirror['id'] ?>" class="btn btn-sm btn-outline">ویرایش</a>
                                     <form action="?id=<?= $mirror['id'] ?>" method="POST" class="inline-form" data-confirm="آیا از حذف این میرور مطمئن هستید؟">
