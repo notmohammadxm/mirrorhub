@@ -137,11 +137,11 @@ renderHeader('مدیریت دسته‌بندی‌ها', true);
                     <?php else: ?>
                         <?php foreach ($categories as $cat): ?>
                             <tr>
-                                <td><?= htmlspecialchars($cat['name']) ?></td>
-                                <td class="ltr-text"><?= htmlspecialchars($cat['slug']) ?></td>
-                                <td><?= $cat['parent_name'] ? htmlspecialchars($cat['parent_name']) : '<span class="badge badge-default">ریشه</span>' ?></td>
-                                <td><?= (int)$cat['sort_order'] ?></td>
-                                <td class="actions">
+                                <td data-label="نام"><?= htmlspecialchars($cat['name']) ?></td>
+                                <td data-label="نامک" class="ltr-text"><?= htmlspecialchars($cat['slug']) ?></td>
+                                <td data-label="والد"><?= $cat['parent_name'] ? htmlspecialchars($cat['parent_name']) : '<span class="badge badge-default">ریشه</span>' ?></td>
+                                <td data-label="ترتیب"><?= (int)$cat['sort_order'] ?></td>
+                                <td data-label="عملیات" class="actions">
                                     <a href="?action=edit&id=<?= $cat['id'] ?>" class="btn btn-sm btn-outline">ویرایش</a>
                                     <form action="?id=<?= $cat['id'] ?>" method="POST" class="inline-form" onsubmit="return confirm('آیا از حذف مطمئن هستید؟');">
                                         <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= generateCsrfToken() ?>">
