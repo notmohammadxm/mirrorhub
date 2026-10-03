@@ -3188,3 +3188,17 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
 .mirror-editor-page .mirror-category-card .mirror-category-meta {
     margin-inline-start: .35rem;
 }
+
+
+/* ============ Admin mirror protocol badge spacing ============ */
+.admin-layout .data-table td[data-label="پروتکل"] .protocol-badge {
+    margin-inline: .3rem;
+}
+
+.admin-layout .data-table td[data-label="پروتکل"] .protocol-badge:first-child {
+    margin-inline-start: 0;
+}
+
+.admin-layout .data-table td[data-label="پروتکل"] .protocol-badge:last-child {
+    margin-inline-end: 0;
+}
