@@ -559,6 +559,17 @@ a:hover { color: var(--accent-hover); }
 
 .category-card:hover::after { opacity: 1; transform: translateY(-50%) translateX(0); }
 
+.category-parent-tag {
+    display: inline-flex;
+    margin-bottom: 0.45rem;
+    padding: 0.18rem 0.55rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-soft);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
 .category-card h3 {
     font-size: 1.08rem;
     margin-bottom: 0.4rem;
