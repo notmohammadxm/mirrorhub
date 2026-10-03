@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ============================================================
        Category Picker Validation
        ============================================================ */
-    const categoryForm = document.querySelector('form[data-require-category]');
+    const categoryForm = document.querySelector('form[data-require-category]:not(.mirror-editor-form)');
     if (categoryForm) {
         categoryForm.addEventListener('submit', (e) => {
             const checked = categoryForm.querySelectorAll('input[name="category_ids[]"]:checked');
@@ -455,6 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mirrorForm && document.querySelector('.mirror-form-page')) {
         const q = selector => mirrorForm.querySelector(selector);
         const qa = selector => Array.from(mirrorForm.querySelectorAll(selector));
+        const mirrorSubmit = q('button[type="submit"]');
+        const slugField = q('#slug');
+        let slugTouched = !!slugField?.value.trim();
+        let formDirty = false;
 
         const nameFaField = q('#name_fa');
         const nameEnField = q('#name_en');
@@ -547,16 +551,57 @@ document.addEventListener('DOMContentLoaded', () => {
             syncPreview();
         };
 
+        const markDirty = () => {
+            formDirty = true;
+        };
+
         [nameFaField, nameEnField, urlField, statusField, descriptionField, customInput].forEach(field => {
             if (!field) return;
-            field.addEventListener('input', syncPreview);
-            field.addEventListener('change', syncPreview);
+            field.addEventListener('input', () => {
+                markDirty();
+                syncPreview();
+            });
+            field.addEventListener('change', () => {
+                markDirty();
+                syncPreview();
+            });
         });
 
         qa('input[name="protocols[]"], input[name="category_ids[]"]').forEach(input => {
-            input.addEventListener('change', syncPreview);
+            input.addEventListener('change', () => {
+                markDirty();
+                syncPreview();
+            });
         });
-        customCheckbox?.addEventListener('change', syncCustomProtocol);
+
+        if (slugField) {
+            slugField.addEventListener('input', () => {
+                slugTouched = true;
+                markDirty();
+            });
+
+            const slugifyClient = value => String(value)
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .slice(0, 160);
+
+            const autoSlug = () => {
+                if (slugTouched || slugField.value.trim()) return;
+                const source = nameEnField?.value.trim() || '';
+                const generated = slugifyClient(source);
+                if (generated) slugField.value = generated;
+            };
+
+            nameEnField?.addEventListener('blur', autoSlug);
+        }
+
+        customCheckbox?.addEventListener('change', () => {
+            markDirty();
+            syncCustomProtocol();
+        });
 
         syncCustomProtocol();
         syncPreview();
@@ -565,11 +610,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const protocolInputs = qa('input[name="protocols[]"]:checked');
             const categoryInputs = qa('input[name="category_ids[]"]:checked');
             const customValid = !customCheckbox?.checked || !!customInput?.value.trim();
+
             if (!nameFaField?.value.trim() || !urlField?.checkValidity() || !protocolInputs.length || !customValid || !categoryInputs.length) {
                 e.preventDefault();
                 syncPreview();
                 showAlert('نام، آدرس معتبر، حداقل یک پروتکل و حداقل یک دسته‌بندی الزامی است.', 'warning', 'اطلاعات ناقص');
+                return;
             }
+
+            formDirty = false;
+            if (mirrorSubmit) {
+                mirrorSubmit.disabled = true;
+                mirrorSubmit.dataset.label = mirrorSubmit.innerHTML;
+                mirrorSubmit.innerHTML = '<span class="mirror-save-spinner" aria-hidden="true"></span> در حال ذخیره...';
+            }
+        });
+
+        window.addEventListener('beforeunload', e => {
+            if (!formDirty) return;
+            e.preventDefault();
+            e.returnValue = '';
         });
     }
 
