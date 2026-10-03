@@ -349,7 +349,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const nameFa = btn.dataset.nameFa || '';
             const nameEn = btn.dataset.nameEn || '';
             const url = btn.dataset.url || '';
-            const protocol = btn.dataset.protocol || '';
+            const protocols = (() => {
+                try { return JSON.parse(btn.dataset.protocols || '[]'); } catch (e) { return []; }
+            })();
             const category = btn.dataset.category || '';
             const description = btn.dataset.description || '';
             const status = btn.dataset.status || 'pending';
@@ -371,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="font-family:monospace;direction:ltr;text-align:right;font-size:0.82rem;word-break:break-all;">${escapeHtml(url)}</a>
                     </div>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        ${protocol ? `<span class="badge protocol-badge">${escapeHtml(protocol.toUpperCase())}</span>` : ''}
+                        ${protocols.map(item => { const label = item.custom_label || item.protocol || ''; return label ? '<span class="badge protocol-badge">' + escapeHtml(label.toUpperCase()) + '</span>' : ''; }).join('')}
                         <span class="badge badge-primary">${escapeHtml(category)}</span>
                     </div>
                     ${description ? `<div><p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.15rem;">توضیحات</p><p style="font-size:0.88rem;line-height:1.7;">${escapeHtml(description)}</p></div>` : ''}
