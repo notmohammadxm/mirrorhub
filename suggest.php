@@ -52,76 +52,109 @@ $protocolOptions = getProtocolOptions();
 renderHeader('پیشنهاد میرور جدید');
 ?>
 
-<section class="section">
-    <h1 class="section-title">پیشنهاد یا درخواست میرور جدید</h1>
-    <p class="section-desc">اگر میروری می‌شناسید که در فهرست ما وجود ندارد، فرم زیر را تکمیل کنید. درخواست شما پس از بررسی توسط مدیران به فهرست اضافه خواهد شد.</p>
-
-    <form action="<?= SITE_URL ?>/suggest.php" method="POST" class="form-container card">
-        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= generateCsrfToken() ?>">
-        
-        <div class="form-row">
-            <div class="form-group flex-1">
-                <label for="name_fa">نام فارسی میرور <span class="required">*</span></label>
-                <input type="text" id="name_fa" name="name_fa" required maxlength="120" placeholder="مثلاً: آرشیو اوبونتو" autocomplete="off">
-            </div>
-            <div class="form-group flex-1">
-                <label for="name_en">نام انگلیسی میرور</label>
-                <input type="text" id="name_en" name="name_en" maxlength="120" placeholder="Ubuntu Archive" dir="ltr" autocomplete="off">
-            </div>
+<section class="section suggestion-page">
+    <div class="page-hero">
+        <div class="page-hero-icon"><?= icon('plus-circle', 24) ?></div>
+        <div>
+            <span class="eyebrow">MirrorHub • پیشنهاد جامعه</span>
+            <h1 class="section-title">پیشنهاد یا درخواست میرور جدید</h1>
+            <p class="section-desc">اطلاعات میرور را وارد کنید تا بعد از بررسی مدیر، به فهرست عمومی اضافه شود.</p>
         </div>
+    </div>
 
-        <div class="form-row">
-            <div class="form-group flex-2">
-                <label for="url">آدرس اینترنتی (URL) <span class="required">*</span></label>
-                <input type="url" id="url" name="url" required maxlength="255" placeholder="https://example.com/mirror" dir="ltr" autocomplete="off">
+    <form action="<?= SITE_URL ?>/suggest.php" method="POST" class="smart-form card" id="suggestion-form">
+        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= generateCsrfToken() ?>">
+
+        <div class="form-section">
+            <div class="form-section-head">
+                <span class="step-badge">۱</span>
+                <div><h2>اطلاعات میرور</h2><p>نام و آدرس سرویس را ثبت کنید.</p></div>
             </div>
-            <div class="form-group flex-1">
-                <label>پروتکل‌ها <span class="required">*</span></label>
-                <div class="protocol-picker">
-                    <?php foreach ($protocolOptions as $val => $label): ?>
-                        <label class="protocol-checkbox">
-                            <input type="checkbox" name="protocols[]" value="<?= $val ?>" <?= $val === 'https' ? 'checked' : '' ?>>
-                            <span><?= htmlspecialchars($label) ?></span>
-                        </label>
-                        <?php if ($val === 'custom'): ?>
-                            <input class="custom-protocol-input" type="text" name="custom_protocols[]" maxlength="100" placeholder="مثلاً HTTP/2" disabled>
-                        <?php else: ?>
-                            <input type="hidden" name="custom_protocols[]" value="">
-                        <?php endif; ?>
-                    <?php endforeach; ?>
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="name_fa">نام فارسی میرور <span class="required">*</span></label>
+                    <input type="text" id="name_fa" name="name_fa" required maxlength="120" placeholder="مثلاً: آرشیو اوبونتو" autocomplete="off">
+                </div>
+                <div class="form-group flex-1">
+                    <label for="name_en">نام انگلیسی میرور</label>
+                    <input type="text" id="name_en" name="name_en" maxlength="120" placeholder="Ubuntu Archive" dir="ltr" autocomplete="off">
                 </div>
             </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group flex-1">
-                <label for="parent_category_id">دسته‌بندی والد <span class="required">*</span></label>
-                <select id="parent_category_id" name="parent_category_id" required>
-                    <option value="">انتخاب والد...</option>
-                    <?php foreach ($parentCategories as $cat): ?>
-                        <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="form-group flex-1">
-                <label for="category_id">زیر‌دسته <span class="required">*</span></label>
-                <select id="category_id" name="category_id" required disabled>
-                    <option value="">ابتدا والد را انتخاب کنید...</option>
-                    <?php foreach ($childCategories as $cat): ?>
-                        <option value="<?= $cat['id'] ?>" data-parent="<?= $cat['parent_id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+            <div class="form-group">
+                <label for="url">آدرس اینترنتی (URL) <span class="required">*</span></label>
+                <div class="input-with-prefix"><span>URL</span><input type="url" id="url" name="url" required maxlength="255" placeholder="https://example.com/mirror" dir="ltr" autocomplete="off"></div>
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="description">توضیحات (اختیاری)</label>
-            <textarea id="description" name="description" rows="4" maxlength="1000" placeholder="توضیحاتی درباره میرور، کاربرد آن یا دلیل نیاز به آن..."></textarea>
+        <div class="form-section">
+            <div class="form-section-head">
+                <span class="step-badge">۲</span>
+                <div><h2>پروتکل‌های دسترسی</h2><p>هر تعداد پروتکل که میرور پشتیبانی می‌کند انتخاب کنید.</p></div>
+            </div>
+            <div class="protocol-picker protocol-picker-large">
+                <?php foreach ($protocolOptions as $val => $label): ?>
+                    <label class="protocol-option-card">
+                        <input type="checkbox" name="protocols[]" value="<?= $val ?>" <?= $val === 'https' ? 'checked' : '' ?>>
+                        <span class="protocol-option-mark"><?= icon('check', 15) ?></span>
+                        <span class="protocol-option-copy"><strong><?= htmlspecialchars($label) ?></strong><small><?= $val === 'custom' ? 'پروتکل دلخواه' : strtoupper($val) ?></small></span>
+                    </label>
+                    <?php if ($val === 'custom'): ?>
+                        <div class="custom-protocol-wrap">
+                            <input class="custom-protocol-input" type="text" name="custom_protocols[]" maxlength="100" placeholder="مثلاً: HTTP/2" disabled>
+                        </div>
+                    <?php else: ?>
+                        <input type="hidden" name="custom_protocols[]" value="">
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
         </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">ثبت پیشنهاد</button>
-            <a href="<?= SITE_URL ?>/index.php" class="btn btn-outline">انصراف</a>
+        <div class="form-section">
+            <div class="form-section-head">
+                <span class="step-badge">۳</span>
+                <div><h2>دسته‌بندی</h2><p>برای مرتب‌سازی دقیق، انتخاب والد و زیر‌دسته هر دو اجباری است.</p></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="parent_category_id">والد <span class="required">*</span></label>
+                    <select id="parent_category_id" name="parent_category_id" required>
+                        <option value="">انتخاب دسته والد...</option>
+                        <?php foreach ($parentCategories as $cat): ?>
+                            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group flex-1">
+                    <label for="category_id">زیر‌دسته <span class="required">*</span></label>
+                    <select id="category_id" name="category_id" required disabled>
+                        <option value="">ابتدا والد را انتخاب کنید...</option>
+                        <?php foreach ($childCategories as $cat): ?>
+                            <option value="<?= $cat['id'] ?>" data-parent="<?= $cat['parent_id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="selection-note"><span class="selection-dot"></span> والد فقط برای ساختار و نمایش متادیتا استفاده می‌شود؛ لینک اصلی به زیر‌دسته خواهد بود.</div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-head">
+                <span class="step-badge">۴</span>
+                <div><h2>توضیحات</h2><p>جزئیات مفید درباره محتوا، سرعت یا کاربرد میرور را بنویسید.</p></div>
+            </div>
+            <div class="form-group">
+                <label for="description">توضیحات (اختیاری)</label>
+                <textarea id="description" name="description" rows="5" maxlength="1000" placeholder="مثلاً: میرور بسته‌های Ubuntu و Debian با دسترسی سریع داخلی..."></textarea>
+                <div class="field-counter"><span id="description-count">۰</span> / ۱۰۰۰</div>
+            </div>
+        </div>
+
+        <div class="form-actions sticky-actions">
+            <div class="form-submit-hint"><span class="status-dot"></span><span>قبل از ثبت، اطلاعات را بررسی کنید.</span></div>
+            <div class="form-submit-buttons">
+                <a href="<?= SITE_URL ?>/index.php" class="btn btn-outline">انصراف</a>
+                <button type="submit" class="btn btn-primary btn-lg">ثبت پیشنهاد میرور</button>
+            </div>
         </div>
     </form>
 </section>
