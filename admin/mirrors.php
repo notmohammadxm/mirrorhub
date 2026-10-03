@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name_en = sanitize($_POST['name_en'] ?? '');
     $slug = sanitize($_POST['slug'] ?? '');
     $url = filter_var(trim($_POST['url'] ?? ''), FILTER_SANITIZE_URL);
-    $protocols = normalizeProtocols($_POST['protocols'] ?? [], $_POST['custom_protocol'] ?? '');
+    $protocols = normalizeProtocols($_POST['protocols'] ?? [], $_POST['custom_protocols'] ?? []);
     $protocol = $protocols[0]['protocol'] ?? 'https';
     $description = sanitize($_POST['description'] ?? '');
     $status = in_array($_POST['status'] ?? '', ['active', 'inactive']) ? $_POST['status'] : 'active';
@@ -101,7 +101,6 @@ if ($action === 'edit' && $id) {
 
 $prefill = [];
 $prefillRequestId = 0;
-$prefillProtocols = [];
 if ($action === 'add' && $fromRequest > 0) {
     $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ?");
     $stmt->execute([$fromRequest]);
@@ -109,7 +108,6 @@ if ($action === 'add' && $fromRequest > 0) {
     if ($row) {
         $prefill = $row;
         $prefillRequestId = (int)$row['id'];
-        $prefillProtocols = getRequestProtocols($pdo, $prefillRequestId);
     }
 }
 
@@ -125,61 +123,66 @@ renderHeader('مدیریت میرورها', true);
         <?php if ($action === 'add' || $action === 'edit'): ?>
             <a href="<?= SITE_URL ?>/admin/mirrors.php" class="btn btn-outline">بازگشت به لیست</a>
         <?php else: ?>
-                                    <?php foreach (($categoryGroups[0] ?? []) as $root): ?>
-                                        <div class="category-group-title"><?= htmlspecialchars($root['name']) ?></div>
-                                        <?php foreach (($categoryGroups[(int)$root['id']] ?? []) as $child): ?>
-                                            <label class="category-checkbox category-child">
-                                                <input type="checkbox" name="category_ids[]" value="<?= $child['id'] ?>" <?= in_array((int)$child['id'], $currentCatIds, true) ? 'checked' : '' ?>>
-                                                <span><?= htmlspecialchars($child['name']) ?></span>
-                                            </label>
-                                        <?php endforeach; ?>
-                                    <?php endforeach; ?>
-                                    <?php foreach (($categoryGroups[0] ?? []) as $root): ?>
-                                        <?php if (empty($categoryGroups[(int)$root['id']] ?? [])): ?>
-                                            <label class="category-checkbox">
-                                                <input type="checkbox" name="category_ids[]" value="<?= $root['id'] ?>" <?= in_array((int)$root['id'], $currentCatIds, true) ? 'checked' : '' ?>>
-                                                <span><?= htmlspecialchars($root['name']) ?></span>
-                                            </label>
-                                        <?php endif; ?>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <div class="editor-panel">
-                            <div class="editor-panel-title">وضعیت انتشار</div>
-                            <label class="status-select-card">
-                                <span class="status-select-copy"><strong>وضعیت میرور</strong><small>میرور غیرفعال در سایت عمومی نمایش داده نمی‌شود.</small></span>
-                                <select id="status" name="status">
-                                    <option value="active" <?= ($currentMirror['status'] ?? 'active') === 'active' ? 'selected' : '' ?>>فعال</option>
-                                    <option value="inactive" <?= ($currentMirror['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>غیرفعال</option>
-                                </select>
-                            </label>
-                        </div>
+            <a href="<?= SITE_URL ?>/admin/mirrors.php?action=add" class="btn btn-primary">افزودن میرور جدید</a>
+        <?php endif; ?>
+    </div>
+
+    <?php if ($action === 'add' || $action === 'edit'): ?>
+        <div class="form-container card">
+            <h2><?= $action === 'edit' ? 'ویرایش میرور' : 'افزودن میرور جدید' ?></h2>
+            <?php if ($prefillRequestId): ?>
+                <div class="alert alert-success" style="margin-bottom:1rem;">
+                    این میرور بر اساس درخواست #<?= $prefillRequestId ?> در حال ساخت است. پس از ذخیره، به‌صورت خودکار به آن متصل می‌شود.
+                </div>
+            <?php endif; ?>
+            <form action="<?= SITE_URL ?>/admin/mirrors.php?action=<?= $action ?>&id=<?= $id ?>" method="POST" data-require-category>
+                <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= generateCsrfToken() ?>">
+                <?php if ($prefillRequestId): ?>
+                    <input type="hidden" name="link_request_id" value="<?= $prefillRequestId ?>">
+                <?php endif; ?>
+                
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="name_fa">نام فارسی <span class="required">*</span></label>
+                        <input type="text" id="name_fa" name="name_fa"
+                            value="<?= htmlspecialchars($currentMirror['name_fa'] ?? $prefill['name_fa'] ?? '') ?>"
+                            required autocomplete="off">
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="name_en">نام انگلیسی</label>
+                        <input type="text" id="name_en" name="name_en"
+                            value="<?= htmlspecialchars($currentMirror['name_en'] ?? $prefill['name_en'] ?? '') ?>"
+                            dir="ltr" autocomplete="off">
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <div class="form-section-head">
-                        <span class="step-badge">۴</span>
-                        <div><h2>توضیحات</h2><p>جزئیات تکمیلی برای کاربران سایت.</p></div>
+                <div class="form-row">
+                    <div class="form-group flex-2">
+                        <label for="url">آدرس اینترنتی (URL) <span class="required">*</span></label>
+                        <input type="url" id="url" name="url"
+                            value="<?= htmlspecialchars($currentMirror['url'] ?? $prefill['url'] ?? '') ?>"
+                            dir="ltr" required placeholder="https://example.com/mirror" autocomplete="off">
                     </div>
-                    <div class="form-group">
-                        <label for="description">توضیحات</label>
-                        <textarea id="description" name="description" rows="6" maxlength="1000" placeholder="توضیح درباره محتوا، توزیع‌ها، سرعت، محدوده دسترسی و..."><?= htmlspecialchars($currentMirror['description'] ?? $prefill['description'] ?? '') ?></textarea>
-                        <div class="field-counter"><span id="description-count">۰</span> / ۱۰۰۰</div>
-                    </div>
-                </div>
-
-                <div class="form-actions sticky-actions editor-actions">
-                    <div class="form-submit-hint"><span class="status-dot"></span><span>ذخیره باعث بروزرسانی مستقیم اطلاعات میرور می‌شود.</span></div>
-                    <div class="form-submit-buttons">
-                        <a href="<?= SITE_URL ?>/admin/mirrors.php" class="btn btn-outline">انصراف</a>
-                        <button type="submit" class="btn btn-primary btn-lg"><?= $action === 'edit' ? 'ذخیره تغییرات' : 'افزودن میرور' ?></button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    <?php else: ?>
+                    <div class="form-group flex-1">
+                        <label>پروتکل‌ها <span class="required">*</span></label>
+                        <small class="form-hint">چند پروتکل را انتخاب کنید؛ برای «سفارشی» نام پروتکل را وارد کنید.</small>
+                        <div class="protocol-picker">
+                            <?php
+                            $selectedProtocols = $currentProtocols;
+                            if (empty($selectedProtocols) && !empty($prefill['protocol'])) {
+                                $selectedProtocols = normalizeProtocols([$prefill['protocol']]);
+                            }
+                            foreach ($protocolOptions as $val => $label):
+                                $selected = array_values(array_filter($selectedProtocols, fn($p) => $p['protocol'] === $val));
+                                $customValue = $selected[0]['custom_label'] ?? '';
+                            ?>
+                                <label class="protocol-checkbox">
+                                    <input type="checkbox" name="protocols[]" value="<?= $val ?>" <?= $selected ? 'checked' : '' ?>>
+                                    <span><?= htmlspecialchars($label) ?></span>
+                                </label>
+                                <?php if ($val === 'custom'): ?>
+                                    <input class="custom-protocol-input" type="text" name="custom_protocols[]" maxlength="100" placeholder="مثلاً: HTTP/2" value="<?= htmlspecialchars($customValue) ?>" <?= $selected ? '' : 'disabled' ?>>
+                                <?php else: ?>
                                     <input type="hidden" name="custom_protocols[]" value="">
                                 <?php endif; ?>
                             <?php endforeach; ?>
