@@ -138,15 +138,15 @@ renderHeader('مدیریت کاربران', true);
                     <?php else: ?>
                         <?php foreach ($users as $user): ?>
                             <tr>
-                                <td class="ltr-text">
+                                <td data-label="نام کاربری" class="ltr-text">
                                     <?= htmlspecialchars($user['username']) ?>
                                     <?php if ($user['id'] == $_SESSION['user_id']): ?>
                                         <span class="badge badge-primary">شما</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><span class="badge badge-<?= $user['role'] === 'admin' ? 'primary' : 'default' ?>"><?= $user['role'] === 'admin' ? 'مدیر' : 'کاربر' ?></span></td>
-                                <td><?= formatDate($user['created_at']) ?></td>
-                                <td class="actions">
+                                <td data-label="نقش"><span class="badge badge-<?= $user['role'] === 'admin' ? 'primary' : 'default' ?>"><?= $user['role'] === 'admin' ? 'مدیر' : 'کاربر' ?></span></td>
+                                <td data-label="تاریخ ثبت‌نام"><?= formatDate($user['created_at']) ?></td>
+                                <td data-label="عملیات" class="actions">
                                     <a href="?action=edit&id=<?= $user['id'] ?>" class="btn btn-sm btn-outline">ویرایش</a>
                                     <?php if ($user['id'] != $_SESSION['user_id']): ?>
                                         <form action="?id=<?= $user['id'] ?>" method="POST" class="inline-form" onsubmit="return confirm('آیا از حذف مطمئن هستید؟');">
