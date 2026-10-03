@@ -2243,7 +2243,7 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
 .mirror-protocol-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: .55rem;
+    gap: .4rem;
 }
 
 .mirror-protocol-card,
@@ -2251,9 +2251,9 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     position: relative;
     display: flex;
     align-items: center;
-    gap: .65rem;
-    min-height: 66px;
-    padding: .75rem .8rem;
+    gap: .5rem;
+    min-height: 58px;
+    padding: .58rem .65rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     background: var(--bg-tertiary);
@@ -2295,9 +2295,9 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
 
 .mirror-protocol-check,
 .mirror-category-check {
-    width: 22px;
-    height: 22px;
-    flex: 0 0 22px;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
     display: grid;
     place-items: center;
     border-radius: 7px;
@@ -2320,7 +2320,7 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: .08rem;
+    gap: .02rem;
     flex: 1;
 }
 
@@ -2359,8 +2359,8 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     grid-column: 1 / -1;
     display: none;
     align-items: center;
-    gap: .65rem;
-    padding: .75rem;
+    gap: .5rem;
+    padding: .6rem .65rem;
     border: 1px dashed rgba(163,214,92,.25);
     border-radius: var(--radius);
     background: rgba(163,214,92,.035);
