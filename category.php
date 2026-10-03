@@ -1,0 +1,99 @@
+<?php
+require_once 'includes/db.php';
+require_once 'includes/functions.php';
+require_once 'includes/layout.php';
+
+$slug = sanitize($_GET['slug'] ?? '');
+if (!$slug) redirect(SITE_URL . '/index.php');
+
+$category = getCategoryBySlug($pdo, $slug);
+if (!$category) {
+    flash('error', 'دسته‌بندی مورد نظر یافت نشد.');
+    redirect(SITE_URL . '/index.php');
+}
+
+$path = getCategoryPath($pdo, $category['id']);
+$subCategories = getCategories($pdo, $category['id']);
+$mirrors = getMirrorsByCategory($pdo, $category['id']);
+foreach ($mirrors as &$m) {
+    $m['categories'] = getMirrorCategories($pdo, $m['id']);
+}
+unset($m);
+
+renderHeader($category['name']);
+?>
+
+<nav class="breadcrumb">
+    <a href="<?= SITE_URL ?>/index.php">خانه</a>
+    <?php foreach ($path as $index => $p): ?>
+        <span class="separator">/</span>
+        <?php if ($index === count($path) - 1): ?>
+            <span class="current"><?= htmlspecialchars($p['name']) ?></span>
+        <?php else: ?>
+            <a href="<?= SITE_URL ?>/category.php?slug=<?= htmlspecialchars($p['slug']) ?>"><?= htmlspecialchars($p['name']) ?></a>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</nav>
+
+<section class="section">
+    <div class="section-header">
+        <h1 class="section-title"><?= htmlspecialchars($category['name']) ?></h1>
+        <span class="badge badge-primary"><?= count($mirrors) ?> میرور</span>
+    </div>
+    <?php if ($category['description']): ?>
+        <p class="category-desc"><?= htmlspecialchars($category['description']) ?></p>
+    <?php endif; ?>
+</section>
+
+<?php if (!empty($subCategories)): ?>
+<section class="section">
+    <h2 class="section-title">زیردسته‌بندی‌ها</h2>
+    <div class="grid grid-cols-3">
+        <?php foreach ($subCategories as $subCat): ?>
+            <a href="<?= SITE_URL ?>/category.php?slug=<?= htmlspecialchars($subCat['slug']) ?>" class="card category-card">
+                <h3><?= htmlspecialchars($subCat['name']) ?></h3>
+                <?php if ($subCat['description']): ?>
+                    <p><?= htmlspecialchars(excerpt($subCat['description'], 80)) ?></p>
+                <?php endif; ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
+
+<section class="section">
+    <h2 class="section-title">میرورهای این دسته</h2>
+    <?php if (empty($mirrors)): ?>
+        <p class="empty-state">هنوز میروری در این دسته‌بندی ثبت نشده است.</p>
+    <?php else: ?>
+        <div class="grid grid-cols-2">
+            <?php foreach ($mirrors as $mirror): ?>
+                <?php $names = mirrorDisplayName($mirror); ?>
+                <div class="card mirror-card">
+                    <div class="mirror-header">
+                        <div class="mirror-titles">
+                            <h3><?= htmlspecialchars($names['fa']) ?></h3>
+                            <?php if ($names['en'] && $names['en'] !== $names['fa']): ?>
+                                <span class="mirror-name-en"><?= htmlspecialchars($names['en']) ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <a href="<?= htmlspecialchars($mirror['url']) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">مشاهده</a>
+                    </div>
+                    <?php if ($mirror['description']): ?>
+                        <p class="mirror-desc"><?= htmlspecialchars($mirror['description']) ?></p>
+                    <?php endif; ?>
+                    <div class="mirror-meta">
+                        <span class="badge <?= getProtocolBadgeClass($mirror['protocol'] ?? 'https') ?> protocol-badge"><?= htmlspecialchars(strtoupper(getProtocolLabel($mirror['protocol'] ?? 'https'))) ?></span>
+                        <?php foreach ($mirror['categories'] as $c): ?>
+                            <?php if ($c['id'] != $category['id']): ?>
+                                <a href="<?= SITE_URL ?>/category.php?slug=<?= htmlspecialchars($c['slug']) ?>" class="badge"><?= htmlspecialchars($c['name']) ?></a>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</section>
+
+<?php renderFooter(); ?>
