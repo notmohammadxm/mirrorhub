@@ -12,11 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name_fa = sanitize($_POST['name_fa'] ?? '');
     $name_en = sanitize($_POST['name_en'] ?? '');
     $url = filter_var(trim($_POST['url'] ?? ''), FILTER_SANITIZE_URL);
-    $protocol = in_array($_POST['protocol'] ?? '', array_keys(getProtocolOptions()), true) ? $_POST['protocol'] : 'https';
-    $category_name = sanitize($_POST['category_name'] ?? '');
+    $protocols = normalizeProtocols($_POST['protocols'] ?? [], $_POST['custom_protocols'] ?? []);
+    $parent_category_id = (int)($_POST['parent_category_id'] ?? 0);
+    $category_id = (int)($_POST['category_id'] ?? 0);
+    $parentCategory = $parent_category_id ? getCategoryById($pdo, $parent_category_id) : null;
+    $childCategory = $category_id ? getCategoryById($pdo, $category_id) : null;
+    $category_name = $parentCategory && $childCategory && (int)$childCategory['parent_id'] === $parent_category_id
+        ? $parentCategory['name'] . ' / ' . $childCategory['name']
+        : '';
     $description = sanitize($_POST['description'] ?? '');
 
-    if (empty($name_fa) || empty($url) || empty($category_name)) {
+    if (empty($name_fa) || empty($url) || empty($protocols) || !$parentCategory || !$childCategory || (int)$childCategory['parent_id'] !== $parent_category_id) {
         flash('error', 'لطفاً تمام فیلدهای ضروری را پر کنید.');
         redirect(SITE_URL . '/suggest.php');
     }
@@ -27,8 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO requests (name_fa, name_en, url, protocol, category_name, description, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')");
-        $stmt->execute([$name_fa, $name_en, $url, $protocol, $category_name, $description]);
+        $protocol = $protocols[0]['protocol'];
+        $stmt = $pdo->prepare("INSERT INTO requests (name_fa, name_en, url, protocol, parent_category_id, category_id, category_name, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+        $stmt->execute([$name_fa, $name_en, $url, $protocol, $parent_category_id, $category_id, $category_name, $description]);
+        setRequestProtocols($pdo, (int)$pdo->lastInsertId(), $protocols);
         flash('success', 'پیشنهاد شما با موفقیت ثبت شد و پس از بررسی مدیران منتشر خواهد شد.');
         redirect(SITE_URL . '/suggest.php');
     } catch (PDOException $e) {
@@ -37,7 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$categories = getCategories($pdo, null);
+$parentCategories = getCategories($pdo, null);
+$allCategories = getAllCategories($pdo);
+$childCategories = array_values(array_filter($allCategories, fn($cat) => !empty($cat['parent_id'])));
 $protocolOptions = getProtocolOptions();
 renderHeader('پیشنهاد میرور جدید');
 ?>
@@ -66,26 +76,42 @@ renderHeader('پیشنهاد میرور جدید');
                 <input type="url" id="url" name="url" required maxlength="255" placeholder="https://example.com/mirror" dir="ltr" autocomplete="off">
             </div>
             <div class="form-group flex-1">
-                <label for="protocol">پروتکل <span class="required">*</span></label>
-                <select id="protocol" name="protocol" required>
+                <label>پروتکل‌ها <span class="required">*</span></label>
+                <div class="protocol-picker">
                     <?php foreach ($protocolOptions as $val => $label): ?>
-                        <option value="<?= $val ?>" <?= $val === 'https' ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                        <label class="protocol-checkbox">
+                            <input type="checkbox" name="protocols[]" value="<?= $val ?>" <?= $val === 'https' ? 'checked' : '' ?>>
+                            <span><?= htmlspecialchars($label) ?></span>
+                        </label>
+                        <?php if ($val === 'custom'): ?>
+                            <input class="custom-protocol-input" type="text" name="custom_protocols[]" maxlength="100" placeholder="مثلاً HTTP/2" disabled>
+                        <?php else: ?>
+                            <input type="hidden" name="custom_protocols[]" value="">
+                        <?php endif; ?>
                     <?php endforeach; ?>
-                </select>
+                </div>
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="category_name">نام دسته‌بندی <span class="required">*</span></label>
-            <input type="text" id="category_name" name="category_name" required maxlength="120" placeholder="مثلاً: توزیع‌های لینوکس" autocomplete="off">
-            <?php if (!empty($categories)): ?>
-                <small class="form-hint">می‌توانید یکی از دسته‌بندی‌های موجود را انتخاب کنید یا نام دسته جدیدی را وارد نمایید:</small>
-                <div class="category-suggestions">
-                    <?php foreach ($categories as $cat): ?>
-                        <span class="suggestion-chip" data-value="<?= htmlspecialchars($cat['name']) ?>"><?= htmlspecialchars($cat['name']) ?></span>
+        <div class="form-row">
+            <div class="form-group flex-1">
+                <label for="parent_category_id">دسته‌بندی والد <span class="required">*</span></label>
+                <select id="parent_category_id" name="parent_category_id" required>
+                    <option value="">انتخاب والد...</option>
+                    <?php foreach ($parentCategories as $cat): ?>
+                        <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
                     <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
+                </select>
+            </div>
+            <div class="form-group flex-1">
+                <label for="category_id">زیر‌دسته <span class="required">*</span></label>
+                <select id="category_id" name="category_id" required disabled>
+                    <option value="">ابتدا والد را انتخاب کنید...</option>
+                    <?php foreach ($childCategories as $cat): ?>
+                        <option value="<?= $cat['id'] ?>" data-parent="<?= $cat['parent_id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
         </div>
 
         <div class="form-group">
