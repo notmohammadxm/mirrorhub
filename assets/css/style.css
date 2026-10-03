@@ -1956,3 +1956,17 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     .mirror-form-card-head { align-items:flex-start; }
     .mirror-form-required { display:none; }
 }
+
+
+/* ============ Mirror Editor layout fixes ============ */
+.mirror-form-page { width: 100%; max-width: 1180px; }
+@media (max-width: 1120px) {
+    .mirror-form-layout { grid-template-columns: 1fr; }
+    .mirror-form-side {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .mirror-live-card { grid-column: 1 / -1; }
+    .mirror-side-tip { grid-column: 1 / -1; }
+}
