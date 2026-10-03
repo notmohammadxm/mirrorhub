@@ -283,6 +283,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
+       Multi Protocol Picker
+       ============================================================ */
+    document.querySelectorAll('.protocol-picker').forEach(picker => {
+        const customCheckbox = picker.querySelector('input[name="protocols[]"][value="custom"]');
+        const customInput = picker.querySelector('.custom-protocol-input');
+        if (customCheckbox && customInput) {
+            const sync = () => {
+                customInput.disabled = !customCheckbox.checked;
+                if (!customCheckbox.checked) customInput.value = '';
+                else customInput.focus();
+            };
+            customCheckbox.addEventListener('change', sync);
+            sync();
+        }
+    });
+
+    /* ============================================================
        Focus Search on '/' key
        ============================================================ */
     document.addEventListener('keydown', (e) => {
