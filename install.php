@@ -69,7 +69,7 @@ try {
                 `name_fa` VARCHAR(120) NOT NULL,
                 `name_en` VARCHAR(120) DEFAULT NULL,
                 `url` VARCHAR(255) NOT NULL,
-                `protocol` ENUM('https','http','ftp','rsync','other') DEFAULT 'https',
+                `protocol` VARCHAR(32) DEFAULT 'https',
                 `category_name` VARCHAR(120),
                 `parent_category_id` INT DEFAULT NULL,
                 `category_id` INT DEFAULT NULL,
@@ -79,7 +79,11 @@ try {
                 `mirror_id` INT DEFAULT NULL,
                 `reviewed_by` INT DEFAULT NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                `reviewed_at` TIMESTAMP NULL
+                `reviewed_at` TIMESTAMP NULL,
+                INDEX `idx_requests_parent_category` (`parent_category_id`),
+                INDEX `idx_requests_category` (`category_id`),
+                FOREIGN KEY (`parent_category_id`) REFERENCES `categories`(`id`) ON DELETE SET NULL,
+                FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
 
