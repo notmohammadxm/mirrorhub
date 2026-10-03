@@ -244,6 +244,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
+       Suggestion Parent/Child Category Picker
+       ============================================================ */
+    const parentCategory = document.getElementById('parent_category_id');
+    const childCategory = document.getElementById('category_id');
+    if (parentCategory && childCategory) {
+        const syncChildCategories = () => {
+            const parentId = parentCategory.value;
+            let visible = 0;
+            childCategory.querySelectorAll('option[data-parent]').forEach(option => {
+                const show = !!parentId && option.dataset.parent === parentId;
+                option.hidden = !show;
+                if (!show && option.selected) option.selected = false;
+                if (show) visible++;
+            });
+            childCategory.disabled = !parentId || visible === 0;
+            if (!parentId) {
+                childCategory.value = '';
+                childCategory.querySelector('option:not([data-parent])').textContent = 'ابتدا والد را انتخاب کنید...';
+            } else {
+                childCategory.querySelector('option:not([data-parent])').textContent =
+                    visible ? 'انتخاب زیر‌دسته...' : 'این والد زیر‌دسته‌ای ندارد';
+            }
+        };
+        parentCategory.addEventListener('change', syncChildCategories);
+        syncChildCategories();
+    }
+
+    /* ============================================================
        Auto Slug Generation
        ============================================================ */
     const nameFa = document.getElementById('name_fa');
