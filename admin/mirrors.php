@@ -380,10 +380,10 @@ $selectedProtocolValues = array_map(fn($p) => $p['protocol'], $selectedProtocols
 
                         <div class="mirror-submit-bar">
                             <div class="mirror-submit-checks" aria-label="وضعیت فرم">
-                                <span id="check-name"><span></span> نام</span>
-                                <span id="check-url"><span></span> آدرس</span>
-                                <span id="check-protocol"><span></span> پروتکل</span>
-                                <span id="check-category"><span></span> دسته‌بندی</span>
+                                <span class="mirror-submit-check"><span></span> نام</span>
+                                <span class="mirror-submit-check"><span></span> آدرس</span>
+                                <span class="mirror-submit-check"><span></span> پروتکل</span>
+                                <span class="mirror-submit-check"><span></span> دسته‌بندی</span>
                             </div>
                             <div class="mirror-submit-actions">
                                 <a href="<?= SITE_URL ?>/admin/mirrors.php" class="btn btn-outline">انصراف</a>
