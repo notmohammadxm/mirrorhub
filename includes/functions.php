@@ -219,6 +219,25 @@ function getMirrorCategories($pdo, $mirrorId) {
     return $stmt->fetchAll();
 }
 
+function getMirrorCategoryTags($pdo, $mirrorId) {
+    $categories = getMirrorCategories($pdo, $mirrorId);
+    $parents = [];
+    foreach ($categories as $cat) {
+        if (!empty($cat['parent_id'])) {
+            $parent = getCategoryById($pdo, $cat['parent_id']);
+            if ($parent) $parents[$parent['id']] = $parent;
+        }
+    }
+    $all = array_merge($categories, array_values($parents));
+    usort($all, function ($a, $b) {
+        $aChild = !empty($a['parent_id']);
+        $bChild = !empty($b['parent_id']);
+        if ($aChild !== $bChild) return $aChild ? -1 : 1;
+        return strcasecmp($a['name'], $b['name']);
+    });
+    return $all;
+}
+
 function setMirrorCategories($pdo, $mirrorId, array $categoryIds) {
     $pdo->prepare("DELETE FROM mirror_categories WHERE mirror_id = ?")->execute([(int)$mirrorId]);
     $categoryIds = array_filter(array_unique(array_map('intval', $categoryIds)), fn($id) => $id > 0);
