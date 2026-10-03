@@ -416,15 +416,36 @@ a:hover { color: var(--accent-hover); }
 /* ============ Hero ============ */
 .hero {
     text-align: center;
-    padding: 3.5rem 1.5rem;
+    padding: 4.5rem 1.5rem;
     background:
-        radial-gradient(circle at 50% 0%, rgba(163, 214, 92, 0.14), transparent 65%),
+        radial-gradient(circle at 50% -20%, rgba(163, 214, 92, 0.24), transparent 52%),
+        radial-gradient(circle at 15% 80%, rgba(108, 182, 217, 0.10), transparent 34%),
+        radial-gradient(circle at 85% 70%, rgba(224, 179, 86, 0.08), transparent 30%),
         var(--bg-secondary);
     border-radius: var(--radius-lg);
     margin-bottom: 2.5rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(163, 214, 92, 0.25);
+    box-shadow: 0 24px 70px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.025);
     position: relative;
     overflow: hidden;
+}
+.hero::before {
+    content: '';
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    top: -160px;
+    right: -80px;
+    border-radius: 50%;
+    border: 1px solid rgba(163,214,92,.18);
+    box-shadow: 0 0 0 24px rgba(163,214,92,.035), 0 0 0 48px rgba(163,214,92,.02);
+}
+.hero::after {
+    content: '';
+    position: absolute;
+    inset: auto 10% 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(163,214,92,.45), transparent);
 }
 
 .hero > * { position: relative; z-index: 1; }
@@ -747,6 +768,43 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
 }
 
 .required { color: var(--danger); font-weight: 600; }
+
+/* ============ Protocol Picker ============ */
+.protocol-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.55rem;
+    margin-top: 0.6rem;
+}
+.protocol-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all var(--t);
+}
+.protocol-checkbox:has(input:checked) {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+.protocol-checkbox input { accent-color: var(--accent); }
+.custom-protocol-input {
+    width: 100%;
+    min-width: 0;
+    padding: 0.65rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-family: inherit;
+}
+.custom-protocol-input:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ============ Category Picker (FIXED) ============ */
 .category-picker {
