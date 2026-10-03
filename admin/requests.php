@@ -93,28 +93,28 @@ renderHeader('مدیریت درخواست‌ها', true);
                 <?php else: ?>
                     <?php foreach ($requests as $req): ?>
                         <tr>
-                            <td>
+                            <td data-label="نام میرور">
                                 <span class="req-name"><?= htmlspecialchars($req['name_fa']) ?></span>
                                 <?php if (!empty($req['name_en'])): ?>
                                     <span class="req-name-en"><?= htmlspecialchars($req['name_en']) ?></span>
                                 <?php endif; ?>
                             </td>
-                            <td class="ltr-text">
+                            <td data-label="آدرس" class="ltr-text">
                                 <a href="<?= htmlspecialchars($req['url']) ?>" target="_blank" rel="noopener noreferrer">
                                     <?= htmlspecialchars(excerpt($req['url'], 30)) ?>
                                 </a>
                             </td>
-                            <td>
+                            <td data-label="دسته‌بندی">
                                 <?php if ($req['parent_category']): ?><span class="badge badge-default"><?= htmlspecialchars($req['parent_category']['name']) ?></span><?php endif; ?>
                                 <?php if ($req['child_category']): ?><span class="badge badge-primary"><?= htmlspecialchars($req['child_category']['name']) ?></span><?php endif; ?>
                             </td>
-                            <td>
+                            <td data-label="وضعیت">
                                 <span class="badge badge-<?= $req['status'] === 'reviewed' ? 'success' : 'warning' ?>">
                                     <?= $req['status'] === 'reviewed' ? 'بررسی‌شده' : 'بررسی‌نشده' ?>
                                 </span>
                             </td>
-                            <td><?= formatDate($req['created_at']) ?></td>
-                            <td class="actions">
+                            <td data-label="تاریخ"><?= formatDate($req['created_at']) ?></td>
+                            <td data-label="عملیات" class="actions">
                                 <button type="button"
                                     class="btn btn-sm btn-primary"
                                     data-review-request
