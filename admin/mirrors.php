@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name_en = sanitize($_POST['name_en'] ?? '');
     $slug = sanitize($_POST['slug'] ?? '');
     $url = filter_var(trim($_POST['url'] ?? ''), FILTER_SANITIZE_URL);
-    $protocols = normalizeProtocols($_POST['protocols'] ?? [], $_POST['custom_protocols'] ?? []);
+    $protocols = normalizeProtocols($_POST['protocols'] ?? [], $_POST['custom_protocol'] ?? '');
     $protocol = $protocols[0]['protocol'] ?? 'https';
     $description = sanitize($_POST['description'] ?? '');
     $status = in_array($_POST['status'] ?? '', ['active', 'inactive']) ? $_POST['status'] : 'active';
