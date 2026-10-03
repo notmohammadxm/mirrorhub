@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const descriptionField = q('#description');
         const customCheckbox = q('input[name="protocols[]"][value="custom"]');
         const customPanel = document.getElementById('custom-protocol-panel');
-        const customInput = q('input[name="custom_protocol"]');
+        const customInput = q('input[name="custom_protocol"], input[name="custom_protocols[]"]');
 
         const previewName = document.getElementById('preview-name');
         const previewNameEn = document.getElementById('preview-name-en');
