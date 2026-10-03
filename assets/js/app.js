@@ -311,6 +311,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
+       Smart Form Enhancements
+       ============================================================ */
+    const description = document.getElementById('description');
+    const descriptionCount = document.getElementById('description-count');
+    if (description && descriptionCount) {
+        const renderCount = () => {
+            descriptionCount.textContent = String(description.value.length).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+        };
+        description.addEventListener('input', renderCount);
+        renderCount();
+    }
+
+    const suggestionForm = document.getElementById('suggestion-form');
+    if (suggestionForm) {
+        suggestionForm.addEventListener('submit', (e) => {
+            const protocols = suggestionForm.querySelectorAll('input[name="protocols[]"]:checked');
+            const parent = document.getElementById('parent_category_id');
+            const child = document.getElementById('category_id');
+            if (!protocols.length || !parent?.value || !child?.value) {
+                e.preventDefault();
+                showAlert('لطفاً حداقل یک پروتکل و هر دو سطح والد و زیر‌دسته را انتخاب کنید.', 'warning', 'اطلاعات ناقص');
+            }
+        });
+    }
+
+    /* ============================================================
        Multi Protocol Picker
        ============================================================ */
     document.querySelectorAll('.protocol-picker').forEach(picker => {
