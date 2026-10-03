@@ -3202,3 +3202,103 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
 .admin-layout .data-table td[data-label="پروتکل"] .protocol-badge:last-child {
     margin-inline-end: 0;
 }
+
+
+/* ============ Suggestion multi-link + contact UI ============ */
+.form-optional {
+    color: var(--text-muted);
+    font-size: .68rem;
+    font-weight: 500;
+    margin-inline-start: .3rem;
+}
+
+.request-links-list {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    margin-top: .25rem;
+}
+
+.request-link-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0,1fr) auto;
+    align-items: center;
+    gap: .65rem;
+    padding: .4rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+}
+
+.request-link-row input {
+    min-width: 0;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.request-link-index {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-soft);
+    color: var(--accent);
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.request-link-remove {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+}
+
+.request-link-remove:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+.request-link-add {
+    margin-top: .7rem;
+}
+
+.request-link-note {
+    margin-top: .7rem;
+}
+
+.request-links-summary,
+.request-contact-summary {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+}
+
+.request-links-summary a,
+.request-contact-summary a {
+    overflow-wrap: anywhere;
+}
+
+.request-links-summary .badge {
+    align-self: flex-start;
+}
+
+@media (max-width: 680px) {
+    .request-link-row {
+        grid-template-columns: 30px minmax(0,1fr) 34px;
+        gap: .45rem;
+    }
+
+    .request-link-index {
+        width: 30px;
+        height: 30px;
+    }
+
+    .request-link-remove {
+        width: 34px;
+        height: 34px;
+    }
+}
