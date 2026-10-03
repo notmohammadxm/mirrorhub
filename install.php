@@ -83,6 +83,26 @@ try {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
 
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `mirror_protocols` (
+                `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+                `mirror_id` INT NOT NULL,
+                `protocol` VARCHAR(32) NOT NULL,
+                `custom_label` VARCHAR(100) DEFAULT NULL,
+                `sort_order` INT DEFAULT 0,
+                UNIQUE KEY `uq_mirror_protocol` (`mirror_id`, `protocol`, `custom_label`),
+                FOREIGN KEY (`mirror_id`) REFERENCES `mirrors`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `request_protocols` (
+                `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+                `request_id` INT NOT NULL,
+                `protocol` VARCHAR(32) NOT NULL,
+                `custom_label` VARCHAR(100) DEFAULT NULL,
+                `sort_order` INT DEFAULT 0,
+                UNIQUE KEY `uq_request_protocol` (`request_id`, `protocol`, `custom_label`),
+                FOREIGN KEY (`request_id`) REFERENCES `requests`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
         $pdo->exec("
             CREATE TABLE `visits` (
                 `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
