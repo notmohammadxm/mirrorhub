@@ -3167,3 +3167,24 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
         font-size: .78rem;
     }
 }
+
+
+/* ============ Mirror editor spacing polish ============ */
+.mirror-editor-page .mirror-protocol-card,
+.mirror-editor-page .mirror-category-card {
+    gap: 1rem;
+    padding-inline: 1rem;
+}
+
+.mirror-editor-page .mirror-protocol-main,
+.mirror-editor-page .mirror-category-copy {
+    margin-inline-start: .15rem;
+}
+
+.mirror-editor-page .mirror-protocol-code {
+    margin-inline-start: .35rem;
+}
+
+.mirror-editor-page .mirror-category-card .mirror-category-meta {
+    margin-inline-start: .35rem;
+}
