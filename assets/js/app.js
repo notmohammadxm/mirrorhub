@@ -634,6 +634,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
+       Responsive Navigation
+       ============================================================ */
+    const mainHeader = document.querySelector('.main-header');
+    const navToggle = document.querySelector('.nav-toggle');
+    const mainNav = document.getElementById('main-navigation');
+
+    if (mainHeader && navToggle && mainNav) {
+        const closeNavigation = () => {
+            mainHeader.classList.remove('nav-open');
+            navToggle.setAttribute('aria-expanded', 'false');
+            navToggle.setAttribute('aria-label', 'باز کردن منو');
+        };
+
+        navToggle.addEventListener('click', () => {
+            const open = mainHeader.classList.toggle('nav-open');
+            navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            navToggle.setAttribute('aria-label', open ? 'بستن منو' : 'باز کردن منو');
+        });
+
+        mainNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', closeNavigation);
+        });
+
+        document.addEventListener('click', e => {
+            if (mainHeader.classList.contains('nav-open') && !mainHeader.contains(e.target)) {
+                closeNavigation();
+            }
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeNavigation();
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 760) closeNavigation();
+        });
+    }
+
+    /* ============================================================
        Focus Search on '/' key
        ============================================================ */
     document.addEventListener('keydown', (e) => {
