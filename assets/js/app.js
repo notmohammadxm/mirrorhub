@@ -354,6 +354,101 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ============================================================
+       Backup Import UX
+       ============================================================ */
+    const backupForm = document.getElementById('backup-import-form');
+    const backupFile = document.getElementById('backup-file');
+    const backupDropzone = document.getElementById('backup-dropzone');
+    const backupFilePill = document.getElementById('backup-file-pill');
+    const backupFileName = document.getElementById('backup-file-name');
+    const backupFileSize = document.getElementById('backup-file-size');
+    const backupSubmit = document.getElementById('backup-submit');
+    const replaceConfirm = document.getElementById('replace-confirm');
+
+    if (backupForm && backupFile && backupSubmit) {
+        const mergeMode = backupForm.querySelector('input[name="restore_mode"][value="merge"]');
+        const replaceMode = backupForm.querySelector('input[name="restore_mode"][value="replace"]');
+        const confirmInput = backupForm.querySelector('input[name="replace_confirm"]');
+
+        const formatSize = bytes => {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+        };
+
+        const syncState = () => {
+            const hasFile = backupFile.files && backupFile.files.length > 0;
+            const isReplace = replaceMode && replaceMode.checked;
+            if (replaceConfirm) replaceConfirm.style.display = isReplace ? 'flex' : 'none';
+            if (confirmInput && !isReplace) confirmInput.checked = false;
+            backupSubmit.disabled = !hasFile || (isReplace && !confirmInput?.checked);
+        };
+
+        const showFile = file => {
+            if (!file || !file.name.toLowerCase().endsWith('.json')) {
+                backupFile.value = '';
+                if (backupFilePill) backupFilePill.classList.remove('active');
+                showAlert('فقط فایل JSON پذیرفته می‌شود.', 'warning', 'فرمت نامعتبر');
+                syncState();
+                return;
+            }
+            if (file.size > 25 * 1024 * 1024) {
+                backupFile.value = '';
+                if (backupFilePill) backupFilePill.classList.remove('active');
+                showAlert('حجم فایل نباید بیشتر از ۲۵ مگابایت باشد.', 'warning', 'فایل بزرگ است');
+                syncState();
+                return;
+            }
+            if (backupFileName) backupFileName.textContent = file.name;
+            if (backupFileSize) backupFileSize.textContent = formatSize(file.size);
+            if (backupFilePill) backupFilePill.classList.add('active');
+            syncState();
+        };
+
+        backupFile.addEventListener('change', () => showFile(backupFile.files[0]));
+        [mergeMode, replaceMode, confirmInput].forEach(el => el && el.addEventListener('change', syncState));
+
+        if (backupDropzone) {
+            ['dragenter','dragover'].forEach(type => backupDropzone.addEventListener(type, e => {
+                e.preventDefault();
+                backupDropzone.classList.add('dragover');
+            }));
+            ['dragleave','drop'].forEach(type => backupDropzone.addEventListener(type, e => {
+                e.preventDefault();
+                backupDropzone.classList.remove('dragover');
+            }));
+            backupDropzone.addEventListener('drop', e => {
+                const file = e.dataTransfer.files && e.dataTransfer.files[0];
+                if (!file) return;
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    backupFile.files = dt.files;
+                } catch (_) {}
+                showFile(file);
+            });
+        }
+
+        backupForm.addEventListener('submit', async e => {
+            if (!replaceMode?.checked || backupForm.dataset.confirmed === '1') return;
+            e.preventDefault();
+            const confirmed = await showConfirm({
+                title: 'تأیید جایگزینی کامل',
+                message: 'این عملیات تمام داده‌های فعلی MirrorHub را حذف می‌کند. ادامه می‌دهید؟',
+                type: 'danger',
+                confirmText: 'بله، جایگزین کن',
+                cancelText: 'انصراف'
+            });
+            if (confirmed) {
+                backupForm.dataset.confirmed = '1';
+                backupForm.submit();
+            }
+        });
+
+        syncState();
+    }
+
+    /* ============================================================
        Focus Search on '/' key
        ============================================================ */
     document.addEventListener('keydown', (e) => {
