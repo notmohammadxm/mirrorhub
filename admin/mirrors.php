@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name_en = sanitize($_POST['name_en'] ?? '');
     $slug = sanitize($_POST['slug'] ?? '');
     $url = filter_var(trim($_POST['url'] ?? ''), FILTER_SANITIZE_URL);
-    $protocol = in_array($_POST['protocol'] ?? '', array_keys(getProtocolOptions()), true) ? $_POST['protocol'] : 'https';
+    $protocols = normalizeProtocols($_POST['protocols'] ?? [], $_POST['custom_protocols'] ?? []);
+    $protocol = $protocols[0]['protocol'] ?? 'https';
     $description = sanitize($_POST['description'] ?? '');
     $status = in_array($_POST['status'] ?? '', ['active', 'inactive']) ? $_POST['status'] : 'active';
     $category_ids = array_filter(array_map('intval', $_POST['category_ids'] ?? []), fn($v) => $v > 0);
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $backUrl = SITE_URL . '/admin/mirrors.php?action=' . ($id ? "edit&id=$id" : 'add') . ($linkRequestId ? "&from_request=$linkRequestId" : '');
 
-    if (empty($name_fa) || empty($url) || empty($category_ids)) {
+    if (empty($name_fa) || empty($url) || empty($category_ids) || empty($protocols)) {
         flash('error', 'لطفاً فیلدهای الزامی را پر کنید و حداقل یک دسته‌بندی انتخاب کنید.');
         redirect($backUrl);
     }
@@ -51,12 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("UPDATE mirrors SET name_fa=?, name_en=?, slug=?, url=?, protocol=?, description=?, status=? WHERE id=?")
                 ->execute([$name_fa, $name_en, $slug, $url, $protocol, $description, $status, $id]);
             setMirrorCategories($pdo, $id, $category_ids);
+            setMirrorProtocols($pdo, $id, $protocols);
             flash('success', 'میرور با موفقیت ویرایش شد.');
         } else {
             $pdo->prepare("INSERT INTO mirrors (name_fa, name_en, slug, url, protocol, description, status) VALUES (?, ?, ?, ?, ?, ?, ?)")
                 ->execute([$name_fa, $name_en, $slug, $url, $protocol, $description, $status]);
             $newId = (int)$pdo->lastInsertId();
             setMirrorCategories($pdo, $newId, $category_ids);
+            setMirrorProtocols($pdo, $newId, $protocols);
 
             if ($linkRequestId > 0) {
                 $pdo->prepare("UPDATE requests SET mirror_id = ?, status='reviewed', reviewed_by=?, reviewed_at=NOW() WHERE id = ?")
@@ -93,6 +96,7 @@ if ($action === 'edit' && $id) {
         redirect(SITE_URL . '/admin/mirrors.php');
     }
     $currentCatIds = array_map(fn($c) => (int)$c['id'], getMirrorCategories($pdo, $id));
+    $currentProtocols = getMirrorProtocols($pdo, $id);
 }
 
 $prefill = [];
@@ -108,6 +112,7 @@ if ($action === 'add' && $fromRequest > 0) {
 }
 
 $protocolOptions = getProtocolOptions();
+$currentProtocols = $currentProtocols ?? [];
 
 renderHeader('مدیریت میرورها', true);
 ?>
@@ -159,14 +164,29 @@ renderHeader('مدیریت میرورها', true);
                             dir="ltr" required placeholder="https://example.com/mirror" autocomplete="off">
                     </div>
                     <div class="form-group flex-1">
-                        <label for="protocol">پروتکل <span class="required">*</span></label>
-                        <select id="protocol" name="protocol" required>
+                        <label>پروتکل‌ها <span class="required">*</span></label>
+                        <small class="form-hint">چند پروتکل را انتخاب کنید؛ برای «سفارشی» نام پروتکل را وارد کنید.</small>
+                        <div class="protocol-picker">
                             <?php
-                            $selectedProtocol = $currentMirror['protocol'] ?? $prefill['protocol'] ?? 'https';
-                            foreach ($protocolOptions as $val => $label): ?>
-                                <option value="<?= $val ?>" <?= $selectedProtocol === $val ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                            $selectedProtocols = $currentProtocols;
+                            if (empty($selectedProtocols) && !empty($prefill['protocol'])) {
+                                $selectedProtocols = normalizeProtocols([$prefill['protocol']]);
+                            }
+                            foreach ($protocolOptions as $val => $label):
+                                $selected = array_values(array_filter($selectedProtocols, fn($p) => $p['protocol'] === $val));
+                                $customValue = $selected[0]['custom_label'] ?? '';
+                            ?>
+                                <label class="protocol-checkbox">
+                                    <input type="checkbox" name="protocols[]" value="<?= $val ?>" <?= $selected ? 'checked' : '' ?>>
+                                    <span><?= htmlspecialchars($label) ?></span>
+                                </label>
+                                <?php if ($val === 'custom'): ?>
+                                    <input class="custom-protocol-input" type="text" name="custom_protocols[]" maxlength="100" placeholder="مثلاً: HTTP/2" value="<?= htmlspecialchars($customValue) ?>" <?= $selected ? '' : 'disabled' ?>>
+                                <?php else: ?>
+                                    <input type="hidden" name="custom_protocols[]" value="">
+                                <?php endif; ?>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
                     </div>
                 </div>
 
@@ -242,9 +262,7 @@ renderHeader('مدیریت میرورها', true);
                                 </td>
                                 <td class="ltr-text"><?= htmlspecialchars(excerpt($mirror['url'], 40)) ?></td>
                                 <td>
-                                    <span class="badge <?= getProtocolBadgeClass($mirror['protocol'] ?? 'https') ?> protocol-badge">
-                                        <?= htmlspecialchars(strtoupper(getProtocolLabel($mirror['protocol'] ?? 'https'))) ?>
-                                    </span>
+                                    <?= protocolBadges($mirror['protocols'] ?? getMirrorProtocols($pdo, $mirror['id'])) ?>
                                 </td>
                                 <td>
                                     <?php if (empty($mirror['categories'])): ?>
