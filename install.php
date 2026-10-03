@@ -68,7 +68,7 @@ try {
                 `id` INT AUTO_INCREMENT PRIMARY KEY,
                 `name_fa` VARCHAR(120) NOT NULL,
                 `name_en` VARCHAR(120) DEFAULT NULL,
-                `url` VARCHAR(255) NOT NULL,
+                `url` VARCHAR(1000) NOT NULL,
                 `protocol` VARCHAR(32) DEFAULT 'https',
                 `category_name` VARCHAR(120),
                 `parent_category_id` INT DEFAULT NULL,
