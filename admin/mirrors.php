@@ -109,6 +109,7 @@ if ($action === 'add' && $fromRequest > 0) {
     if ($row) {
         $prefill = $row;
         $prefillRequestId = (int)$row['id'];
+        $prefillProtocols = getRequestProtocols($pdo, $prefillRequestId);
     }
 }
 
