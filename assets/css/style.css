@@ -1114,7 +1114,29 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
 .data-table tbody tr:hover td { background: rgba(163, 214, 92, 0.035); }
 .data-table tbody tr:last-child td { border-bottom: none; }
 
-.data-table .actions { display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
+.data-table .actions {
+    display: table-cell;
+    white-space: normal;
+}
+
+.data-table .actions > a,
+.data-table .actions > form {
+    display: inline-flex;
+    vertical-align: middle;
+    margin: .12rem .08rem;
+}
+
+.data-table tbody tr > td {
+    transition: background var(--t), color var(--t);
+}
+
+.data-table tbody tr:hover > td {
+    background: rgba(163, 214, 92, 0.055);
+}
+
+.data-table td[data-label="پروتکل"] .protocol-badge {
+    margin: .1rem .14rem .1rem 0;
+}
 
 .inline-form { display: inline-flex; margin: 0; }
 
@@ -3013,4 +3035,138 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     .mirror-protocol-card,
     .mirror-category-card { min-height: 61px; }
     .mirror-submit-checks { justify-content: flex-start; }
+}
+
+
+/* ============ Mobile Data Tables ============ */
+@media (max-width: 680px) {
+    .table-container.card {
+        border: 0;
+        background: transparent;
+        overflow: visible;
+    }
+
+    .data-table {
+        display: block;
+    }
+
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table tbody {
+        display: grid;
+        gap: .7rem;
+    }
+
+    .data-table tbody tr {
+        display: grid;
+        gap: 0;
+        padding: .75rem .85rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        background: linear-gradient(180deg, rgba(255,255,255,.012), transparent), var(--bg-secondary);
+        box-shadow: 0 8px 22px rgba(0,0,0,.14);
+        overflow: hidden;
+        transition: transform var(--t), border-color var(--t), background var(--t), box-shadow var(--t);
+    }
+
+    .data-table tbody tr:hover {
+        transform: translateY(-1px);
+        border-color: rgba(163,214,92,.32);
+        background: var(--bg-tertiary);
+        box-shadow: 0 12px 26px rgba(0,0,0,.18);
+    }
+
+    .data-table tbody tr > td,
+    .data-table tbody tr > td.actions {
+        display: grid;
+        grid-template-columns: minmax(82px, 30%) minmax(0, 1fr);
+        align-items: start;
+        gap: .7rem;
+        width: 100%;
+        padding: .62rem 0;
+        border: 0;
+        border-bottom: 1px solid var(--border-soft);
+        background: transparent;
+        text-align: right;
+    }
+
+    .data-table tbody tr > td:last-child {
+        border-bottom: 0;
+        padding-bottom: .2rem;
+    }
+
+    .data-table tbody tr > td::before {
+        content: attr(data-label);
+        color: var(--text-muted);
+        font-size: .68rem;
+        font-weight: 600;
+        line-height: 1.65;
+    }
+
+    .data-table tbody tr > td.actions {
+        align-items: center;
+    }
+
+    .data-table tbody tr > td.actions::before {
+        align-self: center;
+    }
+
+    .data-table tbody tr > td.actions .btn,
+    .data-table tbody tr > td.actions .inline-form {
+        margin: 0;
+    }
+
+    .data-table tbody tr > td.actions {
+        grid-template-columns: minmax(82px, 30%) minmax(0, 1fr);
+    }
+
+    .data-table tbody tr > td.actions > * {
+        justify-self: start;
+    }
+
+    .data-table tbody tr > td.actions .inline-form {
+        display: inline-flex;
+    }
+
+    .data-table tbody tr > td[data-label="عملیات"] > * {
+        display: inline-flex;
+    }
+
+    .data-table tbody tr > td[data-label="پروتکل"] .protocol-badge {
+        margin: .12rem .18rem .12rem 0;
+    }
+
+    .data-table tbody tr > td.empty-state {
+        display: block;
+        border-bottom: 0;
+        padding: 2rem 1rem;
+    }
+
+    .data-table tbody tr > td.empty-state::before {
+        display: none;
+    }
+
+    .data-table .ltr-text {
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 430px) {
+    .data-table tbody {
+        gap: .55rem;
+    }
+
+    .data-table tbody tr {
+        padding: .65rem .75rem;
+    }
+
+    .data-table tbody tr > td,
+    .data-table tbody tr > td.actions {
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: .55rem;
+        padding: .55rem 0;
+        font-size: .78rem;
+    }
 }
