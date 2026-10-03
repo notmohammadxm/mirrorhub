@@ -2998,6 +2998,14 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
 }
 
 @media (max-width: 480px) {
+    .main-header .container {
+        flex-direction: row;
+        align-items: center;
+        gap: .75rem;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
     .mirror-editor-card { padding: 1rem; }
     .mirror-editor-topbar .section-title { font-size: 1.2rem; }
     .mirror-protocol-grid { grid-template-columns: 1fr; }
