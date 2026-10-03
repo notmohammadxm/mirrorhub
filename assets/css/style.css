@@ -2384,9 +2384,9 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     position: relative;
     display: flex;
     align-items: center;
-    gap: .45rem;
-    min-height: 56px;
-    padding: .52rem .6rem;
+    gap: .72rem;
+    min-height: 58px;
+    padding: .62rem .75rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     background: var(--bg-tertiary);
@@ -2428,9 +2428,9 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
 
 .mirror-protocol-check,
 .mirror-category-check {
-    width: 20px;
-    height: 20px;
-    flex: 0 0 20px;
+    width: 21px;
+    height: 21px;
+    flex: 0 0 21px;
     display: grid;
     place-items: center;
     border-radius: 7px;
@@ -2453,7 +2453,7 @@ a.badge:hover { color: var(--accent); border-color: var(--accent); background: v
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: .02rem;
+    gap: .1rem;
     flex: 1;
 }
 
