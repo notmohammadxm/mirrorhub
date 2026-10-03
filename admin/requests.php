@@ -47,6 +47,12 @@ if ($statusFilter !== 'all') {
 $stmt = $pdo->prepare("SELECT * FROM requests $where ORDER BY created_at DESC");
 $stmt->execute($params);
 $requests = $stmt->fetchAll();
+foreach ($requests as &$req) {
+    $req['protocols'] = getRequestProtocols($pdo, $req['id']);
+    $req['parent_category'] = $req['parent_category_id'] ? getCategoryById($pdo, $req['parent_category_id']) : null;
+    $req['child_category'] = $req['category_id'] ? getCategoryById($pdo, $req['category_id']) : null;
+}
+unset($req);
 
 $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM requests WHERE status='pending'")->fetchColumn();
 
@@ -98,7 +104,10 @@ renderHeader('مدیریت درخواست‌ها', true);
                                     <?= htmlspecialchars(excerpt($req['url'], 30)) ?>
                                 </a>
                             </td>
-                            <td><?= htmlspecialchars($req['category_name']) ?></td>
+                            <td>
+                                <?php if ($req['parent_category']): ?><span class="badge badge-default"><?= htmlspecialchars($req['parent_category']['name']) ?></span><?php endif; ?>
+                                <?php if ($req['child_category']): ?><span class="badge badge-primary"><?= htmlspecialchars($req['child_category']['name']) ?></span><?php endif; ?>
+                            </td>
                             <td>
                                 <span class="badge badge-<?= $req['status'] === 'reviewed' ? 'success' : 'warning' ?>">
                                     <?= $req['status'] === 'reviewed' ? 'بررسی‌شده' : 'بررسی‌نشده' ?>
@@ -113,7 +122,7 @@ renderHeader('مدیریت درخواست‌ها', true);
                                     data-name-fa="<?= htmlspecialchars($req['name_fa']) ?>"
                                     data-name-en="<?= htmlspecialchars($req['name_en'] ?? '') ?>"
                                     data-url="<?= htmlspecialchars($req['url']) ?>"
-                                    data-protocol="<?= htmlspecialchars($req['protocol'] ?? 'https') ?>"
+                                    data-protocols="<?= htmlspecialchars(json_encode($req['protocols'], JSON_UNESCAPED_UNICODE)) ?>"
                                     data-category="<?= htmlspecialchars($req['category_name']) ?>"
                                     data-description="<?= htmlspecialchars($req['description'] ?? '') ?>"
                                     data-status="<?= htmlspecialchars($req['status']) ?>"
